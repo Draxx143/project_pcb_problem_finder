@@ -51,6 +51,7 @@
 #include <QTreeWidgetItem>
 #include <QTreeWidgetItemIterator>
 #include <QUrl>
+#include <QUrlQuery>
 #include <memory>
 #include <QVariant>
 #include <QVBoxLayout>
@@ -3030,8 +3031,29 @@ void MainWindow::runDrcAnalysis() {
     auto* layout = new QVBoxLayout(&dlg);
 
     auto* browser = new QTextBrowser(&dlg);
+    browser->setOpenLinks(false);
     browser->setHtml(qs(html));
     layout->addWidget(browser);
+
+    connect(browser, &QTextBrowser::anchorClicked, this, [this, &dlg](const QUrl& url) {
+        if (url.scheme() == QStringLiteral("drc")) {
+            QUrlQuery q(url);
+            const double x = q.queryItemValue(QStringLiteral("x")).toDouble();
+            const double y = q.queryItemValue(QStringLiteral("y")).toDouble();
+            const QString net = q.queryItemValue(QStringLiteral("net"));
+            const QString code = q.queryItemValue(QStringLiteral("code"));
+            if (boardView_ != nullptr) {
+                if (tabs_ != nullptr) tabs_->setCurrentWidget(boardView_);
+                if (!net.isEmpty()) boardView_->setHighlightNet(net);
+                const QString label = net.isEmpty() ? code : (code + QStringLiteral(" [") + net + QStringLiteral("]"));
+                boardView_->zoomToDrcLocation(x, y, label);
+                statusBar()->showMessage(
+                    tr("🎯 Cross-Probed to %1 at (%2, %3) mil — press Esc to clear target")
+                        .arg(label).arg(x, 0, 'f', 1).arg(y, 0, 'f', 1), 8000);
+                dlg.accept();
+            }
+        }
+    });
 
     auto* btnRow = new QHBoxLayout();
     auto* saveBtn = new QPushButton(tr("💾 Export Commercial HTML Report…"), &dlg);

@@ -348,6 +348,7 @@ void BoardView::keyPressEvent(QKeyEvent* event) {
         return;
     }
     if (event->key() == Qt::Key_Escape) {
+        if (hasDrcMarker_) { clearDrcMarker(); }
         if (!highlightNet_.isEmpty()) {
             setHighlightNet(QString());
             emit netClicked(QString());
@@ -695,6 +696,34 @@ void BoardView::applyMeasurement() {
 }
 
 void BoardView::paintMeasure(QPainter& painter) const {
+    if (hasDrcMarker_ && !threeD_) {
+        const QPointF pt = milToWidget(drcMarkerMil_.x(), drcMarkerMil_.y());
+        painter.save();
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        QPen outerPen(QColor(255, 23, 68, 230), 2.2);
+        painter.setPen(outerPen);
+        painter.setBrush(QColor(255, 23, 68, 40));
+        painter.drawEllipse(pt, 22.0, 22.0);
+        QPen innerPen(QColor(0, 229, 255, 240), 1.6, Qt::DashLine);
+        painter.setPen(innerPen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawEllipse(pt, 10.0, 10.0);
+        painter.setPen(QPen(QColor(0, 229, 255, 220), 1.5));
+        painter.drawLine(QPointF(pt.x() - 30.0, pt.y()), QPointF(pt.x() + 30.0, pt.y()));
+        painter.drawLine(QPointF(pt.x(), pt.y() - 30.0), QPointF(pt.x(), pt.y() + 30.0));
+        if (!drcMarkerLabel_.isEmpty()) {
+            QFont f = painter.font();
+            f.setBold(true);
+            painter.setFont(f);
+            const QRectF badgeRect(pt.x() + 16.0, pt.y() - 28.0, 170.0, 22.0);
+            painter.setPen(QPen(QColor(255, 23, 68), 1.2));
+            painter.setBrush(QColor(13, 17, 23, 230));
+            painter.drawRoundedRect(badgeRect, 4.0, 4.0);
+            painter.setPen(QColor(0, 229, 255));
+            painter.drawText(badgeRect.adjusted(6.0, 0.0, -4.0, 0.0), Qt::AlignVCenter | Qt::AlignLeft, drcMarkerLabel_);
+        }
+        painter.restore();
+    }
     if (!measureMode_ || (!hasMeasureStart_ && !hasMeasureEnd_)) return;
 
     const QPointF start = milToWidget(measureStartMil_.x(), measureStartMil_.y());
@@ -1094,4 +1123,33 @@ void BoardView::paintThreeD(QPainter& painter) {
         legendX += 15 + textWidth + 16;
     }
     painter.restore();
+}
+
+
+void BoardView::zoomToDrcLocation(double milX, double milY, const QString& label) {
+    if (!hasDocument_ || list_.empty()) return;
+    if (threeD_) setThreeD(false);
+    hasDrcMarker_ = true;
+    drcMarkerMil_ = QPointF(milX, milY);
+    drcMarkerLabel_ = label;
+
+    zoom_ = 6.0;
+    pan_ = QPointF(0.0, 0.0);
+    const QPointF p0 = milToWidget(milX, milY);
+    const QPointF center(width() * 0.5, height() * 0.5);
+    pan_ = QPointF(10.0, 0.0);
+    const QPointF p1 = milToWidget(milX, milY);
+    if (p1.x() > p0.x()) {
+        pan_ = center - p0;
+    } else {
+        pan_ = p0 - center;
+    }
+    clampPan();
+    update();
+}
+
+void BoardView::clearDrcMarker() {
+    hasDrcMarker_ = false;
+    drcMarkerLabel_.clear();
+    update();
 }

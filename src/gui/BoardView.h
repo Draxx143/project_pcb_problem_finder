@@ -40,6 +40,8 @@ public:
 
     /// Frames one component (index into document.components).
     void zoomToComponent(int index);
+    void zoomToDrcLocation(double milX, double milY, const QString& label);
+    void clearDrcMarker();
 
     /// 3D preview: a software rendered board (solder mask, copper, pads, extruded
     /// bodies). Drag rotates, the wheel zooms, a double click resets the camera.
@@ -128,6 +130,9 @@ private:
     QPointF cursor_;
     bool cursorInside_ = false;
 
+    bool hasDrcMarker_ = false;
+    QPointF drcMarkerMil_;
+    QString drcMarkerLabel_;
     bool measureMode_ = false;
     bool hasMeasureStart_ = false;   ///< first click placed, waiting for the second
     QPointF measureStartMil_;

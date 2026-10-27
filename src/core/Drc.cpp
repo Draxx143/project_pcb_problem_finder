@@ -38,7 +38,7 @@ DrcReport runDrcChecks(const Document& doc, const DrcRules& rules) {
         } else if (!t.net.empty() && isPowerNet(t.net) && t.width > 0.0 && t.width < rules.minPowerTrackWidthMil) {
             rep.violations.push_back({
                 DrcSeverity::Info, "DFM-PWR-01", "Narrow Power Rail Trace",
-                "Power net "" + t.net + "" routed with " + std::to_string(t.width) + " mil width (recommended >= 15 mil).",
+                "Power net \"" + t.net + "\" routed with " + std::to_string(t.width) + " mil width (recommended >= 15 mil).",
                 t.net, fmtCoord(t.x1, t.y1), t.x1, t.y1
             });
         }
@@ -98,7 +98,7 @@ DrcReport runDrcChecks(const Document& doc, const DrcRules& rules) {
         if (ns.pads >= 2 && ns.tracks == 0) {
             rep.violations.push_back({
                 DrcSeverity::Critical, "DRC-NET-01", "Unrouted Net (Open Circuit)",
-                "Net "" + ns.name + "" connects " + std::to_string(ns.pads) + " pads but has 0 routed copper tracks.",
+                "Net \"" + ns.name + "\" connects " + std::to_string(ns.pads) + " pads but has 0 routed copper tracks.",
                 ns.name, "Global Netlist", 0.0, 0.0
             });
         }
@@ -119,46 +119,51 @@ std::string generateCommercialDrcReportHtml(const Document& doc, const DrcReport
     std::ostringstream h;
     std::string scoreColor = rep.healthScore >= 85.0 ? "#00e676" : (rep.healthScore >= 60.0 ? "#ffab00" : "#ff1744");
 
-    h << R"(<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
-<title>CircuitGuard Pro — Engineering DRC & DFM Report</title>
-<style>
-  body { background:#0d1117; color:#e6edf3; font-family:"Segoe UI",Roboto,sans-serif; margin:32px; }
-  .header { display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #00e5ff; padding-bottom:16px; }
-  .brand { font-size:26px; font-weight:800; color:#00e5ff; letter-spacing:1px; }
-  .sub { color:#8b949e; font-size:13px; }
-  .cards { display:flex; gap:16px; margin:24px 0; }
-  .card { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:16px 24px; flex:1; }
-  .card h3 { margin:0 0 6px 0; font-size:13px; color:#8b949e; text-transform:uppercase; }
-  .card .val { font-size:28px; font-weight:700; }
-  table { width:100%; border-collapse:collapse; background:#161b22; border-radius:8px; overflow:hidden; }
-  th { background:#21262d; color:#00e5ff; text-align:left; padding:12px; font-size:13px; }
-  td { padding:10px 12px; border-top:1px solid #30363d; font-size:13px; }
-  .crit { color:#ff5252; font-weight:700; }
-  .warn { color:#ffd740; font-weight:600; }
-  .info { color:#40c4ff; }
-</style></head><body>
-<div class="header">
-  <div><div class="brand">🛡️ CIRCUITGUARD PRO</div><div class="sub">Industrial Design Rule Check (DRC) & DFM Sign-Off Report</div></div>
-  <div class="sub">Board: <b>)" << doc.fileName << R"(</b><br>Size: )" << std::fixed << std::setprecision(1) << doc.bounds.width() << " x " << doc.bounds.height() << R"( mil</div>
-</div>
-<div class="cards">
-  <div class="card"><h3>DFM Health Score</h3><div class="val" style="color:)" << scoreColor << R"(">)" << std::fixed << std::setprecision(0) << rep.healthScore << R"(%</div></div>
-  <div class="card"><h3>Critical Errors</h3><div class="val crit">)" << rep.criticalCount << R"(</div></div>
-  <div class="card"><h3>Warnings</h3><div class="val warn">)" << rep.warningCount << R"(</div></div>
-  <div class="card"><h3>Components / Nets</h3><div class="val">)" << doc.components.size() << " / " << doc.nets.size() << R"(</div></div>
-</div>
-<table><thead><tr><th>Severity</th><th>Code</th><th>Issue</th><th>Net</th><th>Location</th><th>Details</th></tr></thead><tbody>)";
+    h << "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>"
+      << "<title>CircuitGuard Pro — Engineering DRC & DFM Report</title>"
+      << "<style>"
+      << "body { background:#0d1117; color:#e6edf3; font-family:'Segoe UI',Roboto,sans-serif; margin:32px; }"
+      << ".header { display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #00e5ff; padding-bottom:16px; }"
+      << ".brand { font-size:26px; font-weight:800; color:#00e5ff; letter-spacing:1px; }"
+      << ".sub { color:#8b949e; font-size:13px; }"
+      << ".cards { display:flex; gap:16px; margin:24px 0; }"
+      << ".card { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:16px 24px; flex:1; }"
+      << ".card h3 { margin:0 0 6px 0; font-size:13px; color:#8b949e; text-transform:uppercase; }"
+      << ".card .val { font-size:28px; font-weight:700; }"
+      << "table { width:100%; border-collapse:collapse; background:#161b22; border-radius:8px; overflow:hidden; }"
+      << "th { background:#21262d; color:#00e5ff; text-align:left; padding:12px; font-size:13px; }"
+      << "td { padding:10px 12px; border-top:1px solid #30363d; font-size:13px; }"
+      << ".crit { color:#ff5252; font-weight:700; }"
+      << ".warn { color:#ffd740; font-weight:600; }"
+      << ".info { color:#40c4ff; }"
+      << "</style></head><body>"
+      << "<div class='header'>"
+      << "<div><div class='brand'>🛡️ CIRCUITGUARD PRO</div><div class='sub'>Industrial Design Rule Check (DRC) & DFM Sign-Off Report — Click any coordinate to Cross-Probe</div></div>"
+      << "<div class='sub'>Board: <b>" << doc.fileName << "</b><br>Size: " << std::fixed << std::setprecision(1) << doc.bounds.width() << " x " << doc.bounds.height() << " mil</div>"
+      << "</div>"
+      << "<div class='cards'>"
+      << "<div class='card'><h3>DFM Health Score</h3><div class='val' style='color:" << scoreColor << "'>" << std::fixed << std::setprecision(0) << rep.healthScore << "%</div></div>"
+      << "<div class='card'><h3>Critical Errors</h3><div class='val crit'>" << rep.criticalCount << "</div></div>"
+      << "<div class='card'><h3>Warnings</h3><div class='val warn'>" << rep.warningCount << "</div></div>"
+      << "<div class='card'><h3>Components / Nets</h3><div class='val'>" << doc.components.size() << " / " << doc.nets.size() << "</div></div>"
+      << "</div>"
+      << "<table><thead><tr><th>Severity</th><th>Code</th><th>Issue</th><th>Net</th><th>Location (Click to Zoom)</th><th>Details</th></tr></thead><tbody>";
 
     if (rep.violations.empty()) {
-        h << R"(<tr><td colspan="6" style="text-align:center;color:#00e676;padding:24px;">✅ Zero DRC Violations Detected — Board is Ready for Manufacturing!</td></tr>)";
+        h << "<tr><td colspan='6' style='text-align:center;color:#00e676;padding:24px;'>✅ Zero DRC Violations Detected — Board is Ready for Manufacturing!</td></tr>";
     } else {
         for (const auto& v : rep.violations) {
             std::string cls = v.severity == DrcSeverity::Critical ? "crit" : (v.severity == DrcSeverity::Warning ? "warn" : "info");
             std::string lbl = v.severity == DrcSeverity::Critical ? "CRITICAL" : (v.severity == DrcSeverity::Warning ? "WARNING" : "INFO");
-            h << "<tr><td class="" << cls << "">" << lbl << "</td><td><code>" << v.code << "</code></td><td><b>"
-              << v.title << "</b></td><td>" << (v.net.empty() ? "-" : v.net) << "</td><td>" << v.location
-              << "</td><td>" << v.description << "</td></tr>
-";
+            std::string locHtml = v.location;
+            if (v.location != "Global Netlist") {
+                locHtml = "<a href=\"drc://locate?x=" + std::to_string(v.x) + "&y=" + std::to_string(v.y) +
+                          "&net=" + v.net + "&code=" + v.code +
+                          "\" style=\"color:#00e5ff;text-decoration:none;font-weight:700;\">🎯 " + v.location + "</a>";
+            }
+            h << "<tr><td class='" << cls << "'>" << lbl << "</td><td><code>" << v.code << "</code></td><td><b>"
+              << v.title << "</b></td><td>" << (v.net.empty() ? "-" : v.net) << "</td><td>" << locHtml
+              << "</td><td>" << v.description << "</td></tr>";
         }
     }
     h << "</tbody></table></body></html>";
