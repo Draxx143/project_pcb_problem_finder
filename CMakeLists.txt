@@ -115,3 +115,18 @@ install(TARGETS pcbv-cli RUNTIME DESTINATION bin)
 if(TARGET pcbv-gui)
     install(TARGETS pcbv-gui RUNTIME DESTINATION bin)
 endif()
+
+# --- Packaging Configuration (CPack for Debian/Ubuntu) ---
+install(FILES ${CMAKE_SOURCE_DIR}/src/assets/icon.png 
+        DESTINATION share/icons/hicolor/512x512/apps 
+        RENAME circuit-guard.png OPTIONAL)
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "circuit-guard")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_CONTACT "Draxx143 <support@circuitguard.local>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CircuitGuard - Industrial PCB Layout Viewer and AI Diagnostic Suite")
+set(CPACK_DEBIAN_PACKAGE_SECTION "electronics")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+include(CPack)

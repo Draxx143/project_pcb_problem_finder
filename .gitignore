@@ -27,3 +27,16 @@ samples/*.SchLib
 
 # packaged downloads (built by tools/pack_library.py)
 dist/
+
+# Build and Packaging
+build/
+dist/
+*.deb
+*.AppImage
+*.zip
+*.tar.gz
+
+# Python Virtual Environment
+venv/
+.venv/
+__pycache__/
