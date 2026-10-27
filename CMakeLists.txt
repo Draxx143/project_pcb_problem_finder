@@ -17,6 +17,8 @@ option(PCBV_BUILD_TESTS "Build the parser smoke test" ON)
 # ---------------------------------------------------------------------------
 add_library(pcbv_core STATIC
     src/core/Compare.cpp
+    src/core/Drc.cpp
+    src/core/Drc.h
     src/core/Compare.h
     src/core/CompoundFile.cpp
     src/core/CompoundFile.h
@@ -123,7 +125,7 @@ install(FILES ${CMAKE_SOURCE_DIR}/src/assets/icon.png
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "circuit-guard")
-set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_VERSION "1.1.0")
 set(CPACK_PACKAGE_CONTACT "Draxx143 <support@circuitguard.local>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CircuitGuard - Industrial PCB Layout Viewer and AI Diagnostic Suite")
 set(CPACK_DEBIAN_PACKAGE_SECTION "electronics")

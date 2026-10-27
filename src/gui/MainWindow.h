@@ -61,6 +61,7 @@ private slots:
     void exportNetlistCsv();
     void compareWithFile();
     void printBoard();
+    void runDrcAnalysis();
     void updateBoardOptions();
     void applyFilter(const QString& text);
     void applyBomFilter(const QString& text);
@@ -188,6 +189,7 @@ private:
     QAction* threeDAction_ = nullptr;
     QAction* zoomPartAction_ = nullptr;
     QAction* printAction_ = nullptr;
+    QAction* drcAction_ = nullptr;
     QAction* bomHtmlAction_ = nullptr;
     QAction* compareAction_ = nullptr;
     QAction* findAction_ = nullptr;

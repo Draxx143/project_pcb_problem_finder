@@ -68,6 +68,7 @@
 #include "core/AltiumParser.h"
 #include "core/Bom.h"
 #include "core/Export.h"
+#include "core/Drc.h"
 #include "core/Netlist.h"
 #include "core/Recent.h"
 
@@ -109,7 +110,7 @@ public:
 } // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
-    setWindowTitle("PCB Viewer");
+    setWindowTitle("CircuitGuard Pro — Industrial PCB Diagnostic Suite");
     resize(1500, 900);
     setAcceptDrops(true);
     setDockNestingEnabled(true);
@@ -127,7 +128,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     detailsView_->setHtml(
         "<div style='color:#9aa0a6;font-family:sans-serif;padding:18px'>"
-        "<h2 style='color:#e6e6e6;margin-top:0'>No document loaded</h2>"
+        "<h2 style='color:#00e5ff;margin-top:0'>🛡️ CircuitGuard Pro Ready</h2>"
         "<p>Open an Altium <b>.PcbDoc</b> (PCB) or <b>.SchDoc</b> (schematic) file.</p>"
         "<p>Every component is listed with its designator, value/comment, footprint, "
         "manufacturer, part number, pins/pads and the complete raw parameter set.</p>"
@@ -296,6 +297,11 @@ void MainWindow::createActions() {
     netlistCsvAction_->setToolTip(tr("Every pad with its net, layer and position"));
     connect(netlistCsvAction_, &QAction::triggered, this, &MainWindow::exportNetlistCsv);
 
+    drcAction_ = new QAction(tr("🛡️ Run &DRC Check (IPC)"), this);
+    drcAction_->setShortcut(QKeySequence(Qt::Key_F8));
+    drcAction_->setToolTip(tr("Run Industrial Design Rule Check (DRC) & DFM Sign-Off Report  (F8)"));
+    connect(drcAction_, &QAction::triggered, this, &MainWindow::runDrcAnalysis);
+
     printAction_ = new QAction(pcbv::gui::printIcon(), tr("&Print board (1:1)…"), this);
     printAction_->setShortcut(QKeySequence::Print);
     printAction_->setToolTip(tr("Print the board at its real size, or scaled to fit the page  "
@@ -411,6 +417,7 @@ void MainWindow::createMenus() {
     fileMenu->addAction(closeAllAction_);
     fileMenu->addSeparator();
     fileMenu->addAction(printAction_);
+    if (drcAction_) addAction(drcAction_);
     fileMenu->addAction(compareAction_);
     fileMenu->addSeparator();
     QMenu* exportMenu = fileMenu->addMenu(tr("&Export"));
@@ -2997,4 +3004,57 @@ void MainWindow::dropEvent(QDropEvent* event) {
         if (url.isLocalFile()) openDocument(url.toLocalFile());
     }
     event->acceptProposedAction();
+}
+
+
+void MainWindow::runDrcAnalysis() {
+    if (!hasDocument_ || document_.type != pcbv::DocType::PcbDoc) {
+        QMessageBox::information(this, tr("CircuitGuard Pro DRC"),
+                                 tr("Please open an Altium .PcbDoc board file first to run DRC diagnostics."));
+        return;
+    }
+
+    const pcbv::DrcReport rep = pcbv::runDrcChecks(document_);
+    log(QStringLiteral("🛡️ [DRC Engine] %1 — Health Score: %2% | Critical: %3 | Warnings: %4 | Info: %5")
+            .arg(qs(document_.fileName))
+            .arg(rep.healthScore, 0, 'f', 0)
+            .arg(rep.criticalCount)
+            .arg(rep.warningCount)
+            .arg(rep.infoCount));
+
+    const std::string html = pcbv::generateCommercialDrcReportHtml(document_, rep);
+
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("🛡️ CircuitGuard Pro — DRC & DFM Diagnostic Report"));
+    dlg.resize(980, 680);
+    auto* layout = new QVBoxLayout(&dlg);
+
+    auto* browser = new QTextBrowser(&dlg);
+    browser->setHtml(qs(html));
+    layout->addWidget(browser);
+
+    auto* btnRow = new QHBoxLayout();
+    auto* saveBtn = new QPushButton(tr("💾 Export Commercial HTML Report…"), &dlg);
+    auto* closeBtn = new QPushButton(tr("Close"), &dlg);
+    btnRow->addStretch();
+    btnRow->addWidget(saveBtn);
+    btnRow->addWidget(closeBtn);
+    layout->addLayout(btnRow);
+
+    connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+    connect(saveBtn, &QPushButton::clicked, this, [this, html]() {
+        const QString out = QFileDialog::getSaveFileName(
+            this, tr("Export CircuitGuard DRC Report"),
+            exportDirectory() + QStringLiteral("/CircuitGuard_DRC_Report.html"),
+            tr("HTML Engineering Report (*.html)"));
+        if (!out.isEmpty()) {
+            QFile f(out);
+            if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                f.write(QByteArray::fromStdString(html));
+                log(QStringLiteral("💾 Saved commercial DRC report to ") + out);
+            }
+        }
+    });
+
+    dlg.exec();
 }
