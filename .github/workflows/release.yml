@@ -1,0 +1,50 @@
+name: CircuitGuard CI & Auto-Release
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*.*.*" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git python3 python3-pip python3-venv libgl1-mesa-dev libglib2.0-0 file
+          if [ -f "./setup_linux.sh" ]; then
+            chmod +x ./setup_linux.sh
+            ./setup_linux.sh || true
+          fi
+
+      - name: 🏗️ Build & Package (.deb) via CMake and CPack
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make -j$(nproc)
+          cpack -G DEB
+
+      - name: 📦 Upload .deb Artifact (For Every Push)
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuit-guard-linux-deb
+          path: build/*.deb
+
+      - name: 🚀 Publish Official GitHub Release (On Tag Push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/*.deb
+          generate_release_notes: true
+          name: "🛡️ CircuitGuard Pro ${{ github.ref_name }}"
