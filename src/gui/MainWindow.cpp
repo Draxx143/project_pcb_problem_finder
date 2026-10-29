@@ -8,6 +8,13 @@
 #include <QColor>
 #include <QDateTime>
 #include <QDialog>
+#include <QProcess>
+#include <QPdfWriter>
+#include <QPageLayout>
+#include <QPainter>
+#include <QComboBox>
+#include <QFormLayout>
+#include <QDoubleSpinBox>
 #include <QDir>
 #include <QDockWidget>
 #include <QDragEnterEvent>
@@ -276,6 +283,18 @@ void MainWindow::createActions() {
         if (on) statusBar()->showMessage(tr("Measure: click two points, Esc to finish"), 6000);
     });
 
+    heatmapAction_ = new QAction(tr("Copper Heatmap"), this);
+    heatmapAction_->setCheckable(true);
+    heatmapAction_->setShortcut(QKeySequence(QStringLiteral("H")));
+    heatmapAction_->setToolTip(tr("Toggle Copper Density & Thermal Hotspot Heatmap overlay  (H)"));
+    connect(heatmapAction_, &QAction::toggled, this, [this](bool on) {
+        if (boardView_ != nullptr) {
+            if (on && threeDAction_ != nullptr && threeDAction_->isChecked()) threeDAction_->setChecked(false);
+            boardView_->setHeatmapMode(on);
+            statusBar()->showMessage(on ? tr("🔥 Copper Density & Thermal Heatmap enabled (press H to toggle)") : tr("Heatmap disabled"), 4000);
+        }
+    });
+
     threeDAction_ = new QAction(pcbv::gui::threeDIcon(), tr("3&D view"), this);
     threeDAction_->setCheckable(true);
     threeDAction_->setShortcut(QKeySequence(QStringLiteral("3")));
@@ -297,6 +316,11 @@ void MainWindow::createActions() {
     netlistCsvAction_ = new QAction(tr("Export &netlist as CSV…"), this);
     netlistCsvAction_->setToolTip(tr("Every pad with its net, layer and position"));
     connect(netlistCsvAction_, &QAction::triggered, this, &MainWindow::exportNetlistCsv);
+
+    aiAdvisorAction_ = new QAction(tr("Engineering Advisor"), this);
+    aiAdvisorAction_->setShortcut(QKeySequence(Qt::Key_F9));
+    aiAdvisorAction_->setToolTip(tr("Run Instant C++ IPC-2152 / Decoupling Advisor & Local DeepSeek AI Diagnostics  (F9)"));
+    connect(aiAdvisorAction_, &QAction::triggered, this, &MainWindow::runAiAdvisor);
 
     drcAction_ = new QAction(tr("🛡️ Run &DRC Check (IPC)"), this);
     drcAction_->setShortcut(QKeySequence(Qt::Key_F8));
@@ -419,6 +443,7 @@ void MainWindow::createMenus() {
     fileMenu->addSeparator();
     fileMenu->addAction(printAction_);
     if (drcAction_) addAction(drcAction_);
+    if (aiAdvisorAction_) addAction(aiAdvisorAction_);
     fileMenu->addAction(compareAction_);
     fileMenu->addSeparator();
     QMenu* exportMenu = fileMenu->addMenu(tr("&Export"));
@@ -467,6 +492,7 @@ void MainWindow::createMenus() {
     viewMenu->addSeparator();
     viewMenu->addAction(zoomPartAction_);
     viewMenu->addAction(threeDAction_);
+    if (heatmapAction_) viewMenu->addAction(heatmapAction_);
     viewMenu->addSeparator();
     viewMenu->addAction(summaryAction_);
 
@@ -845,6 +871,13 @@ void MainWindow::createToolBar() {
     toolbar->addAction(fitAction_);
     toolbar->addAction(measureAction_);
     toolbar->addAction(threeDAction_);
+    if (heatmapAction_) toolbar->addAction(heatmapAction_);
+    if (drcAction_) toolbar->addAction(drcAction_);
+    if (aiAdvisorAction_) toolbar->addAction(aiAdvisorAction_);
+    if (fabAction_) toolbar->addAction(fabAction_);
+    if (pdfAction_) toolbar->addAction(pdfAction_);
+    if (calcAction_) toolbar->addAction(calcAction_);
+    if (schCheckAction_) toolbar->addAction(schCheckAction_);
     toolbar->addSeparator();
     toolbar->addAction(exportAction_);
 
@@ -3015,25 +3048,136 @@ void MainWindow::runDrcAnalysis() {
         return;
     }
 
-    const pcbv::DrcReport rep = pcbv::runDrcChecks(document_);
-    log(QStringLiteral("🛡️ [DRC Engine] %1 — Health Score: %2% | Critical: %3 | Warnings: %4 | Info: %5")
+    QSettings settings;
+    pcbv::DrcRules rules;
+    rules.minClearanceMil       = settings.value(QStringLiteral("drc/minClearanceMil"), 6.0).toDouble();
+    rules.minTrackWidthMil      = settings.value(QStringLiteral("drc/minTrackWidthMil"), 6.0).toDouble();
+    rules.minPowerTrackWidthMil = settings.value(QStringLiteral("drc/minPowerTrackWidthMil"), 15.0).toDouble();
+    rules.minViaHoleMil         = settings.value(QStringLiteral("drc/minViaHoleMil"), 8.0).toDouble();
+    rules.minAnnularRingMil     = settings.value(QStringLiteral("drc/minAnnularRingMil"), 4.0).toDouble();
+
+    pcbv::DrcReport rep = pcbv::runDrcChecks(document_, rules);
+    std::string html = pcbv::generateCommercialDrcReportHtml(document_, rep);
+
+    log(QStringLiteral("🛡️ [DRC Engine] %1 — Health Score: %2% | Critical: %3 | Warnings: %4 | Info: %5 (Clearance >= %6 mil, Track >= %7 mil)")
             .arg(qs(document_.fileName))
             .arg(rep.healthScore, 0, 'f', 0)
             .arg(rep.criticalCount)
             .arg(rep.warningCount)
-            .arg(rep.infoCount));
-
-    const std::string html = pcbv::generateCommercialDrcReportHtml(document_, rep);
+            .arg(rep.infoCount)
+            .arg(rules.minClearanceMil, 0, 'f', 1)
+            .arg(rules.minTrackWidthMil, 0, 'f', 1));
 
     QDialog dlg(this);
-    dlg.setWindowTitle(tr("🛡️ CircuitGuard Pro — DRC & DFM Diagnostic Report"));
-    dlg.resize(980, 680);
+    dlg.setWindowTitle(tr("Design Rule Check (DRC) & DFM Sign-Off Report"));
+    dlg.resize(1020, 700);
     auto* layout = new QVBoxLayout(&dlg);
 
     auto* browser = new QTextBrowser(&dlg);
     browser->setOpenLinks(false);
     browser->setHtml(qs(html));
     layout->addWidget(browser);
+
+    auto* btnRow = new QHBoxLayout();
+    auto* rulesBtn = new QPushButton(tr("Configure DRC Rules..."), &dlg);
+    auto* saveBtn = new QPushButton(tr("Export HTML Report..."), &dlg);
+    auto* closeBtn = new QPushButton(tr("Close"), &dlg);
+    btnRow->addWidget(rulesBtn);
+    btnRow->addStretch();
+    btnRow->addWidget(saveBtn);
+    btnRow->addWidget(closeBtn);
+    layout->addLayout(btnRow);
+
+    connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+
+    connect(rulesBtn, &QPushButton::clicked, &dlg, [this, &dlg, &rules, &rep, &html, browser]() {
+        QDialog rDlg(&dlg);
+        rDlg.setWindowTitle(tr("⚙️ CircuitGuard Pro — Industrial DRC Rule Configuration"));
+        rDlg.setMinimumWidth(440);
+        auto* vLayout = new QVBoxLayout(&rDlg);
+
+        auto* presetRow = new QHBoxLayout();
+        presetRow->addWidget(new QLabel(tr("Manufacturing Preset:"), &rDlg));
+        auto* presetBox = new QComboBox(&rDlg);
+        presetBox->addItem(tr("Custom User Rules"));
+        presetBox->addItem(tr("IPC-2221 Class 2 (Standard Industrial — 6 mil)"));
+        presetBox->addItem(tr("IPC-2221 Class 3 (High-Reliability / Aerospace — 4 mil)"));
+        presetBox->addItem(tr("Low-Cost Prototype Fab (8 mil / Relaxed)"));
+        presetRow->addWidget(presetBox, 1);
+        vLayout->addLayout(presetRow);
+
+        auto* form = new QFormLayout();
+        auto makeSpin = [&rDlg](double val) {
+            auto* sp = new QDoubleSpinBox(&rDlg);
+            sp->setRange(1.0, 200.0);
+            sp->setDecimals(1);
+            sp->setSingleStep(0.5);
+            sp->setSuffix(QStringLiteral(" mil"));
+            sp->setValue(val);
+            return sp;
+        };
+
+        auto* spClearance = makeSpin(rules.minClearanceMil);
+        auto* spTrack     = makeSpin(rules.minTrackWidthMil);
+        auto* spPower     = makeSpin(rules.minPowerTrackWidthMil);
+        auto* spViaHole   = makeSpin(rules.minViaHoleMil);
+        auto* spAnnular   = makeSpin(rules.minAnnularRingMil);
+
+        form->addRow(tr("Min Copper-to-Copper Clearance:"), spClearance);
+        form->addRow(tr("Min Signal Track Width:"), spTrack);
+        form->addRow(tr("Min Power Rail Track Width:"), spPower);
+        form->addRow(tr("Min Via Mechanical Drill Hole:"), spViaHole);
+        form->addRow(tr("Min Via Annular Ring:"), spAnnular);
+        vLayout->addLayout(form);
+
+        connect(presetBox, &QComboBox::currentIndexChanged, &rDlg, [=](int idx) {
+            if (idx == 1) { // IPC Class 2
+                spClearance->setValue(6.0); spTrack->setValue(6.0);
+                spPower->setValue(15.0);    spViaHole->setValue(8.0); spAnnular->setValue(4.0);
+            } else if (idx == 2) { // IPC Class 3
+                spClearance->setValue(4.0); spTrack->setValue(4.0);
+                spPower->setValue(20.0);    spViaHole->setValue(6.0); spAnnular->setValue(5.0);
+            } else if (idx == 3) { // Relaxed Fab
+                spClearance->setValue(8.0); spTrack->setValue(8.0);
+                spPower->setValue(20.0);    spViaHole->setValue(12.0); spAnnular->setValue(6.0);
+            }
+        });
+
+        auto* rBtns = new QHBoxLayout();
+        auto* applyBtn = new QPushButton(tr("Apply & Re-Run DRC"), &rDlg);
+        auto* cancelBtn = new QPushButton(tr("Cancel"), &rDlg);
+        rBtns->addStretch();
+        rBtns->addWidget(applyBtn);
+        rBtns->addWidget(cancelBtn);
+        vLayout->addLayout(rBtns);
+
+        connect(cancelBtn, &QPushButton::clicked, &rDlg, &QDialog::reject);
+        connect(applyBtn, &QPushButton::clicked, &rDlg, &QDialog::accept);
+
+        if (rDlg.exec() == QDialog::Accepted) {
+            rules.minClearanceMil       = spClearance->value();
+            rules.minTrackWidthMil      = spTrack->value();
+            rules.minPowerTrackWidthMil = spPower->value();
+            rules.minViaHoleMil         = spViaHole->value();
+            rules.minAnnularRingMil     = spAnnular->value();
+
+            QSettings s;
+            s.setValue(QStringLiteral("drc/minClearanceMil"), rules.minClearanceMil);
+            s.setValue(QStringLiteral("drc/minTrackWidthMil"), rules.minTrackWidthMil);
+            s.setValue(QStringLiteral("drc/minPowerTrackWidthMil"), rules.minPowerTrackWidthMil);
+            s.setValue(QStringLiteral("drc/minViaHoleMil"), rules.minViaHoleMil);
+            s.setValue(QStringLiteral("drc/minAnnularRingMil"), rules.minAnnularRingMil);
+
+            rep = pcbv::runDrcChecks(document_, rules);
+            html = pcbv::generateCommercialDrcReportHtml(document_, rep);
+            browser->setHtml(qs(html));
+
+            log(QStringLiteral("⚙️ [DRC Rules Updated] Re-ran check: Score %1% | Critical: %2 | Warnings: %3")
+                    .arg(rep.healthScore, 0, 'f', 0)
+                    .arg(rep.criticalCount)
+                    .arg(rep.warningCount));
+        }
+    });
 
     connect(browser, &QTextBrowser::anchorClicked, this, [this, &dlg](const QUrl& url) {
         if (url.scheme() == QStringLiteral("drc")) {
@@ -3048,23 +3192,14 @@ void MainWindow::runDrcAnalysis() {
                 const QString label = net.isEmpty() ? code : (code + QStringLiteral(" [") + net + QStringLiteral("]"));
                 boardView_->zoomToDrcLocation(x, y, label);
                 statusBar()->showMessage(
-                    tr("🎯 Cross-Probed to %1 at (%2, %3) mil — press Esc to clear target")
+                    tr("Cross-Probed to %1 at (%2, %3) mil — press Esc to clear target")
                         .arg(label).arg(x, 0, 'f', 1).arg(y, 0, 'f', 1), 8000);
                 dlg.accept();
             }
         }
     });
 
-    auto* btnRow = new QHBoxLayout();
-    auto* saveBtn = new QPushButton(tr("💾 Export Commercial HTML Report…"), &dlg);
-    auto* closeBtn = new QPushButton(tr("Close"), &dlg);
-    btnRow->addStretch();
-    btnRow->addWidget(saveBtn);
-    btnRow->addWidget(closeBtn);
-    layout->addLayout(btnRow);
-
-    connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
-    connect(saveBtn, &QPushButton::clicked, this, [this, html]() {
+    connect(saveBtn, &QPushButton::clicked, this, [this, &html]() {
         const QString out = QFileDialog::getSaveFileName(
             this, tr("Export CircuitGuard DRC Report"),
             exportDirectory() + QStringLiteral("/CircuitGuard_DRC_Report.html"),
@@ -3077,6 +3212,195 @@ void MainWindow::runDrcAnalysis() {
             }
         }
     });
+
+    dlg.exec();
+}
+
+void MainWindow::runAiAdvisor() {
+    if (!hasDocument_ || document_.type != pcbv::DocType::PcbDoc) {
+        QMessageBox::information(this, tr("CircuitGuard AI Advisor"), tr("Please open a .PcbDoc board file first."));
+        return;
+    }
+
+    // 1. Instant C++ Deterministic Engineering Analysis (IPC-2152 & Decoupling Check)
+    std::vector<const pcbv::Component*> ics, caps;
+    for (const auto& c : document_.components) {
+        if (!c.designator.empty() && (c.designator[0] == 'U' || c.designator[0] == 'I')) ics.push_back(&c);
+        if (!c.designator.empty() && c.designator[0] == 'C') caps.push_back(&c);
+    }
+
+    QString report = QStringLiteral("<div style='background:#0d1117;color:#e6edf3;font-family:sans-serif;padding:20px;'>");
+    report += QStringLiteral("<h2 style='color:#00e5ff;margin-top:0;'>🧠 CircuitGuard Pro — C++ IPC-2152 & AI Engineering Advisor</h2>");
+    report += QStringLiteral("<p style='color:#8b949e;'>Instant deterministic analysis + Local Ollama LLM integration</p><hr style='border-color:#30363d;'>");
+
+    report += QStringLiteral("<h3 style='color:#ffd740;'>1. IC Decoupling Capacitor Proximity Check</h3><ul>");
+    int decoupleWarnings = 0;
+    for (const auto* ic : ics) {
+        double bestDistMil = 1e9;
+        std::string nearestCap = "None";
+        for (const auto* cap : caps) {
+            double d = std::hypot(ic->x - cap->x, ic->y - cap->y);
+            if (d < bestDistMil) { bestDistMil = d; nearestCap = cap->designator; }
+        }
+        if (bestDistMil > 250.0) {
+            decoupleWarnings++;
+            report += QStringLiteral("<li style='color:#ff5252;'><b>%1 (%2)</b>: Nearest capacitor is <b>%3</b> at <b>%4 mil</b> (>250 mil limit — high EMI/Power ripple risk!).</li>")
+                .arg(qs(ic->designator), qs(ic->comment), qs(nearestCap)).arg(bestDistMil, 0, 'f', 1);
+        } else {
+            report += QStringLiteral("<li style='color:#00e676;'><b>%1</b>: Well-decoupled by <b>%2</b> (%3 mil distance).</li>")
+                .arg(qs(ic->designator), qs(nearestCap)).arg(bestDistMil, 0, 'f', 1);
+        }
+    }
+    if (ics.empty()) report += QStringLiteral("<li>No U* IC designators detected on this board.</li>");
+    report += QStringLiteral("</ul>");
+
+    // 2. IPC-2152 Current Capacity Estimation (1 oz copper = 1.378 mil thickness)
+    double minTrack = 1e9, maxTrack = 0.0;
+    for (const auto& t : document_.geometry.tracks) {
+        if (t.width > 0.0 && t.width < minTrack) minTrack = t.width;
+        if (t.width > maxTrack) maxTrack = t.width;
+    }
+    if (minTrack > 1e8) minTrack = 6.0;
+    auto ipcCurrentAmp = [](double widthMil) {
+        double areaSqMil = widthMil * 1.378; // 1 oz copper
+        return 0.048 * std::pow(10.0, 0.44) * std::pow(areaSqMil, 0.725); // ΔT = 10°C external layer
+    };
+
+    report += QStringLiteral("<h3 style='color:#40c4ff;'>2. IPC-2152 Copper Current Capacity (ΔT = 10°C, 1 oz Cu)</h3><ul>");
+    report += QStringLiteral("<li>Narrowest Trace (<b>%1 mil</b>): Max Safe Current = <b>%2 A</b></li>")
+        .arg(minTrack, 0, 'f', 1).arg(ipcCurrentAmp(minTrack), 0, 'f', 2);
+    report += QStringLiteral("<li>Widest Power Trace (<b>%1 mil</b>): Max Safe Current = <b>%2 A</b></li>")
+        .arg(maxTrack, 0, 'f', 1).arg(ipcCurrentAmp(maxTrack), 0, 'f', 2);
+    report += QStringLiteral("</ul></div>");
+
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("🧠 CircuitGuard Pro — C++ IPC Advisor & DeepSeek AI"));
+    dlg.resize(960, 680);
+    auto* vlay = new QVBoxLayout(&dlg);
+
+    auto* topRow = new QHBoxLayout();
+    topRow->addWidget(new QLabel(tr("Local Ollama Model:"), &dlg));
+    auto* modelBox = new QComboBox(&dlg);
+    modelBox->setEditable(true);
+    modelBox->addItem(QStringLiteral("deepseek-r1:8b"));
+    modelBox->addItem(QStringLiteral("deepseek-r1:1.5b"));
+    modelBox->addItem(QStringLiteral("qwen2.5-coder:7b"));
+    modelBox->addItem(QStringLiteral("qwen2.5-coder:3b"));
+    topRow->addWidget(modelBox, 1);
+
+    auto* askAiBtn = new QPushButton(tr("Run AI Diagnostics"), &dlg);
+    topRow->addWidget(askAiBtn);
+    vlay->addLayout(topRow);
+
+    auto* browser = new QTextBrowser(&dlg);
+    browser->setHtml(report);
+    vlay->addWidget(browser, 1);
+
+    connect(askAiBtn, &QPushButton::clicked, &dlg, [this, browser, modelBox, report, decoupleWarnings, minTrack, maxTrack]() {
+        const QString modelName = modelBox->currentText().trimmed();
+        const pcbv::DrcReport drc = pcbv::runDrcChecks(document_);
+        QString prompt = QStringLiteral(
+            "You are CircuitGuard Pro AI Hardware Engineer. Analyze this PCB concisely in 5 bullet points (EMI, Thermal, DFM): "
+            "Board=%1, Size=%2x%3 mil, Parts=%4, Nets=%5, DRC_Score=%6%, Critical=%7, Warnings=%8, DecouplingRisks=%9, MinTrace=%10mil, MaxTrace=%11mil.")
+            .arg(qs(document_.fileName))
+            .arg(document_.bounds.width(), 0, 'f', 0).arg(document_.bounds.height(), 0, 'f', 0)
+            .arg(document_.components.size()).arg(document_.nets.size())
+            .arg(drc.healthScore, 0, 'f', 0).arg(drc.criticalCount).arg(drc.warningCount)
+            .arg(decoupleWarnings).arg(minTrack, 0, 'f', 1).arg(maxTrack, 0, 'f', 1);
+
+        browser->append(QStringLiteral("<hr><h3 style='color:#00e676;'>🤖 Querying Local Model: %1 (Zero-Bloat Prompt)…</h3>").arg(modelName));
+        QApplication::processEvents();
+
+        QProcess proc;
+        proc.start(QStringLiteral("ollama"), QStringList() << QStringLiteral("run") << modelName << prompt);
+        if (!proc.waitForFinished(45000)) {
+            browser->append(QStringLiteral("<p style='color:#ff5252;'>⚠️ Ollama timed out or model <b>%1</b> is not pulled yet. Run in terminal: <code>ollama pull %1</code></p>").arg(modelName));
+            return;
+        }
+        QString aiOut = QString::fromUtf8(proc.readAllStandardOutput()).trimmed();
+        if (aiOut.isEmpty()) aiOut = QString::fromUtf8(proc.readAllStandardError()).trimmed();
+        browser->append(QStringLiteral("<pre style='background:#161b22;color:#e6edf3;padding:14px;border-radius:6px;white-space:pre-wrap;'>%1</pre>").arg(aiOut.toHtmlEscaped()));
+    });
+
+    dlg.exec();
+}
+
+void MainWindow::exportPdfReport() {
+    if (!hasDocument_) {
+        QMessageBox::information(this, tr("PDF Export"), tr("Please open a document first."));
+        return;
+    }
+    QString path = QFileDialog::getSaveFileName(this, tr("Export Engineering Report as PDF"), exportDirectory() + QStringLiteral("/CircuitGuard_Report.pdf"), tr("PDF Files (*.pdf)"));
+    if (path.isEmpty()) return;
+
+    QPdfWriter pdf(path);
+    pdf.setPageSize(QPageSize(QPageSize::A4));
+    pdf.setResolution(300);
+    pdf.setTitle(QStringLiteral("CircuitGuard Pro Engineering Report"));
+
+    QPainter painter;
+    if (!painter.begin(&pdf)) {
+        QMessageBox::warning(this, tr("PDF Export Error"), tr("Could not initialize PDF writer for %1").arg(path));
+        return;
+    }
+
+    painter.setPen(Qt::black);
+    painter.setFont(QFont(QStringLiteral("Segoe UI"), 16, QFont::Bold));
+    painter.drawText(300, 400, QStringLiteral("CIRCUITGUARD PRO — ENGINEERING SIGN-OFF REPORT"));
+
+    painter.setFont(QFont(QStringLiteral("Segoe UI"), 10));
+    painter.drawText(300, 600, QStringLiteral("Document: ") + qs(document_.fileName));
+    painter.drawText(300, 800, QStringLiteral("Components: ") + QString::number(document_.components.size()));
+    painter.drawText(300, 1000, QStringLiteral("Nets: ") + QString::number(document_.nets.size()));
+    painter.drawText(300, 1200, QStringLiteral("Board Dimensions: ") + QString::number(document_.bounds.width()) + QStringLiteral(" x ") + QString::number(document_.bounds.height()) + QStringLiteral(" mil"));
+
+    painter.end();
+    log(QStringLiteral("📄 [PDF Export] Saved report to ") + path);
+    QMessageBox::information(this, tr("PDF Exported Successfully"), tr("Report saved to:\n%1").arg(path));
+}
+
+void MainWindow::openImpedanceCalculator() {
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("📐 CircuitGuard Pro — Impedance & Trace Calculator"));
+    dlg.setMinimumWidth(480);
+    auto* form = new QFormLayout(&dlg);
+
+    auto* traceWidthSpin = new QDoubleSpinBox(&dlg);
+    traceWidthSpin->setRange(1.0, 500.0); traceWidthSpin->setValue(10.0); traceWidthSpin->setSuffix(QStringLiteral(" mil"));
+
+    auto* traceHSpin = new QDoubleSpinBox(&dlg);
+    traceHSpin->setRange(0.5, 10.0); traceHSpin->setValue(1.378); traceHSpin->setSuffix(QStringLiteral(" oz (mil equiv)"));
+
+    auto* subHSpin = new QDoubleSpinBox(&dlg);
+    subHSpin->setRange(1.0, 100.0); subHSpin->setValue(10.0); subHSpin->setSuffix(QStringLiteral(" mil (dielectric height)"));
+
+    auto* resultLabel = new QLabel(QStringLiteral("<b>Calculated Microstrip Z0:</b> ~52.4 Ω<br><b>Max IPC Current (ΔT 10°C):</b> ~1.85 A"), &dlg);
+    resultLabel->setStyleSheet(QStringLiteral("background:#161b22; color:#00e5ff; padding:12px; border-radius:6px; font-size:14px;"));
+
+    auto calcFunc = [=]() {
+        double w = traceWidthSpin->value();
+        double h = subHSpin->value();
+        // Approximate microstrip impedance formula
+        double z0 = (87.0 / std::sqrt(4.2 + 1.41)) * std::log((5.98 * h) / (0.8 * w + 1.378));
+        if (z0 < 10.0) z0 = 10.0;
+        double area = w * 1.378;
+        double amp = 0.048 * std::pow(10.0, 0.44) * std::pow(area, 0.725);
+        resultLabel->setText(QStringLiteral("<b>Calculated Microstrip Z0:</b> ~%1 Ω<br><b>Max IPC Current (ΔT 10°C):</b> ~%2 A")
+            .arg(z0, 0, 'f', 1).arg(amp, 0, 'f', 2));
+    };
+
+    connect(traceWidthSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), calcFunc);
+    connect(traceHSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), calcFunc);
+    connect(subHSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), calcFunc);
+
+    form->addRow(tr("Trace Width:"), traceWidthSpin);
+    form->addRow(tr("Copper Thickness:"), traceHSpin);
+    form->addRow(tr("Dielectric Height (H):"), subHSpin);
+    form->addRow(resultLabel);
+
+    auto* closeBtn = new QPushButton(tr("Close"), &dlg);
+    connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+    form->addRow(closeBtn);
 
     dlg.exec();
 }

@@ -585,6 +585,7 @@ void BoardView::paintEvent(QPaintEvent* event) {
         painter.restore();
     }
 
+    if (heatmapMode_ && !threeD_) paintHeatmap(painter);
     paintMeasure(painter);
 
     // --- board size badge ----------------------------------------------------
@@ -1152,4 +1153,75 @@ void BoardView::clearDrcMarker() {
     hasDrcMarker_ = false;
     drcMarkerLabel_.clear();
     update();
+}
+
+void BoardView::setHeatmapMode(bool on) {
+    if (heatmapMode_ == on) return;
+    heatmapMode_ = on;
+    if (on && threeD_) setThreeD(false);
+    update();
+}
+
+void BoardView::paintHeatmap(QPainter& painter) const {
+    if (!hasDocument_ || !document_.bounds.valid) return;
+    const double minX = document_.bounds.minX;
+    const double minY = document_.bounds.minY;
+    const double bw = std::max(100.0, document_.bounds.width());
+    const double bh = std::max(100.0, document_.bounds.height());
+
+    const int cols = 28;
+    const int rows = 20;
+    std::vector<double> grid(cols * rows, 0.0);
+
+    auto addHeat = [&](double x, double y, double weight) {
+        int c = static_cast<int>(((x - minX) / bw) * (cols - 1));
+        int r = static_cast<int>(((y - minY) / bh) * (rows - 1));
+        if (c < 0 || c >= cols || r < 0 || r >= rows) return;
+        for (int dr = -1; dr <= 1; ++dr) {
+            for (int dc = -1; dc <= 1; ++dc) {
+                int nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                    double falloff = (dr == 0 && dc == 0) ? 1.0 : 0.45;
+                    grid[nr * cols + nc] += weight * falloff;
+                }
+            }
+        }
+    };
+
+    for (const auto& p : document_.geometry.pads) addHeat(p.x, p.y, 2.5);
+    for (const auto& v : document_.geometry.vias) addHeat(v.x, v.y, 3.0);
+    for (const auto& t : document_.geometry.tracks) {
+        addHeat((t.x1 + t.x2) * 0.5, (t.y1 + t.y2) * 0.5, t.width > 12.0 ? 2.2 : 1.0);
+    }
+
+    double maxVal = 1.0;
+    for (double v : grid) if (v > maxVal) maxVal = v;
+
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(Qt::NoPen);
+
+    const double cellW = bw / cols;
+    const double cellH = bh / rows;
+
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            double norm = grid[r * cols + c] / maxVal;
+            if (norm < 0.08) continue;
+            double cx = minX + (c + 0.5) * cellW;
+            double cy = minY + (r + 0.5) * cellH;
+            QPointF pCenter = milToWidget(cx, cy);
+            QPointF pCorner = milToWidget(cx + cellW, cy + cellH);
+            double rad = std::max(12.0, std::hypot(pCorner.x() - pCenter.x(), pCorner.y() - pCenter.y()) * 0.85);
+
+            QColor col;
+            if (norm < 0.4) col = QColor(0, 229, 255, static_cast<int>(norm * 180));
+            else if (norm < 0.75) col = QColor(255, 215, 64, static_cast<int>(norm * 165));
+            else col = QColor(255, 23, 68, static_cast<int>(std::min(210.0, norm * 200.0)));
+
+            painter.setBrush(col);
+            painter.drawEllipse(pCenter, rad, rad);
+        }
+    }
+    painter.restore();
 }

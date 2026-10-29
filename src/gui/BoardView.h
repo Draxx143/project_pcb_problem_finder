@@ -42,6 +42,8 @@ public:
     void zoomToComponent(int index);
     void zoomToDrcLocation(double milX, double milY, const QString& label);
     void clearDrcMarker();
+    void setHeatmapMode(bool on);
+    bool heatmapMode() const { return heatmapMode_; }
 
     /// 3D preview: a software rendered board (solder mask, copper, pads, extruded
     /// bodies). Drag rotates, the wheel zooms, a double click resets the camera.
@@ -103,6 +105,7 @@ private:
     QString netAt(const QPointF& widgetPos) const;
     void clampPan();
     void paintMeasure(QPainter& painter) const;
+    void paintHeatmap(QPainter& painter) const;
     void paintThreeD(QPainter& painter);
     void resetThreeDCamera();
     void drawPrimitives(QPainter& painter, double scale, bool forPrint) const;
@@ -130,6 +133,7 @@ private:
     QPointF cursor_;
     bool cursorInside_ = false;
 
+    bool heatmapMode_ = false;
     bool hasDrcMarker_ = false;
     QPointF drcMarkerMil_;
     QString drcMarkerLabel_;

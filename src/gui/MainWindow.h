@@ -49,6 +49,8 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
+    void exportPdfReport();
+    void openImpedanceCalculator();
     void openFileDialog();
     void exportCsv();
     void exportJson();
@@ -62,6 +64,7 @@ private slots:
     void compareWithFile();
     void printBoard();
     void runDrcAnalysis();
+    void runAiAdvisor();
     void updateBoardOptions();
     void applyFilter(const QString& text);
     void applyBomFilter(const QString& text);
@@ -187,9 +190,15 @@ private:
     QAction* netlistCsvAction_ = nullptr;
     QAction* measureAction_ = nullptr;
     QAction* threeDAction_ = nullptr;
+    QAction* heatmapAction_ = nullptr;
     QAction* zoomPartAction_ = nullptr;
     QAction* printAction_ = nullptr;
     QAction* drcAction_ = nullptr;
+    QAction* fabAction_ = nullptr;
+    QAction* pdfAction_ = nullptr;
+    QAction* calcAction_ = nullptr;
+    QAction* schCheckAction_ = nullptr;
+    QAction* aiAdvisorAction_ = nullptr;
     QAction* bomHtmlAction_ = nullptr;
     QAction* compareAction_ = nullptr;
     QAction* findAction_ = nullptr;
