@@ -36,23 +36,23 @@ void printUsage() {
         "Usage:\n"
         "  pcbv-cli --list    <file.PcbDoc|file.SchDoc>\n"
         "  pcbv-cli --summary <file>\n"
-        "  pcbv-cli --csv  <out.csv>  <file>\n"
-        "  pcbv-cli --json <out.json> <file>\n"
-        "  pcbv-cli --html <out.html> <file>\n"
-        "  pcbv-cli --svg  <out.svg>  <file.PcbDoc>  board drawing (2D, scalable)\n"
-        "  pcbv-cli --3d   <out.bmp>  <file.PcbDoc> [lib.PcbLib ...]  3D preview\n"
+        "  pcbv-cli --csv  <out.csv> <file>\n"
+        "  pcbv-cli --json <out.json><file>\n"
+        "  pcbv-cli --html <out.html><file>\n"
+        "  pcbv-cli --svg  <out.svg> <file.PcbDoc> board drawing (2D, scalable)\n"
+        "  pcbv-cli --3d   <out.bmp> <file.PcbDoc>[lib.PcbLib ...]  3D preview\n"
         "                                            (real part models from the libraries)\n"
-        "  pcbv-cli --nets  <file.PcbDoc>            net table, track lengths and the stackup\n"
-        "  pcbv-cli --netlist <file.PcbDoc>          connectivity: nets, pads, layers, positions\n"
-        "  pcbv-cli --netlist-csv <out.csv> <file>   the same table as CSV\n"
-        "  pcbv-cli --bom   <out.csv>  <file>        grouped BOM (quantity + designators)\n"
-        "  pcbv-cli --bom-html <out.html> <file>     grouped BOM as a printable page\n"
-        "  pcbv-cli --compare <left> <right>         what was added / removed / changed\n"
-        "  pcbv-cli --compare-html <out.html> <left> <right>\n"
-        "  pcbv-cli --details <designator> <file>   print every parameter of one part\n"
-        "  pcbv-cli --inspect <file>                show how the file was detected/decoded\n"
-        "  pcbv-cli --lib   <file.PcbLib|.SchLib>   footprints / symbols of a library\n"
-        "  pcbv-cli --lib-csv <out.csv> <file>      the same listing as CSV\n"
+        "  pcbv-cli --nets  <file.PcbDoc>           net table, track lengths and the stackup\n"
+        "  pcbv-cli --netlist <file.PcbDoc>         connectivity: nets, pads, layers, positions\n"
+        "  pcbv-cli --netlist-csv <out.csv><file>  the same table as CSV\n"
+        "  pcbv-cli --bom   <out.csv> <file>       grouped BOM (quantity + designators)\n"
+        "  pcbv-cli --bom-html <out.html><file>    grouped BOM as a printable page\n"
+        "  pcbv-cli --compare <left><right>        what was added / removed / changed\n"
+        "  pcbv-cli --compare-html <out.html><left><right>\n"
+        "  pcbv-cli --details <designator><file>  print every parameter of one part\n"
+        "  pcbv-cli --inspect <file>               show how the file was detected/decoded\n"
+        "  pcbv-cli --lib   <file.PcbLib|.SchLib>  footprints / symbols of a library\n"
+        "  pcbv-cli --lib-csv <out.csv><file>     the same listing as CSV\n"
         "\n"
         "Options:\n"
         "  -h, --help      show this help\n"
@@ -185,10 +185,10 @@ void printNets(const pcbv::Document& doc) {
     for (const auto& net : doc.netSummaries) {
         std::string connections;
         for (std::size_t i = 0; i < net.connections.size() && i < 6; ++i) {
-            if (i > 0) connections += ", ";
+            if (i >0) connections += ", ";
             connections += net.connections[i];
         }
-        if (net.connections.size() > 6) connections += ", …";
+        if (net.connections.size() >6) connections += ", …";
         std::cout << cellText(std::to_string(index++), 4) << cellText(net.name, 24)
                   << cellText(std::to_string(net.pads), 6) << cellText(std::to_string(net.tracks), 8)
                   << cellText(std::to_string(net.vias), 6)
@@ -209,7 +209,7 @@ void printNets(const pcbv::Document& doc) {
 } // namespace
 
 int main(int argc, char** argv) {
-    std::vector<std::string> args(argv + 1, argv + argc);
+    std::vector<std::string>args(argv + 1, argv + argc);
     if (args.empty() || args[0] == "-h" || args[0] == "--help") {
         printUsage();
         return args.empty() ? 1 : 0;
@@ -230,15 +230,15 @@ int main(int argc, char** argv) {
     } else if (mode == "--csv" || mode == "--json" || mode == "--html" || mode == "--svg" ||
                mode == "--3d" || mode == "--bom" || mode == "--bom-html" ||
                mode == "--netlist-csv" || mode == "--lib-csv") {
-        if (args.size() < 3) return fail("usage: " + mode + " <output> <input>");
+        if (args.size() < 3) return fail("usage: " + mode + " <output><input>");
         outputPath = args[1];
         inputPath = args[2];
     } else if (mode == "--compare") {
-        if (args.size() < 3) return fail("usage: --compare <left> <right>");
+        if (args.size() < 3) return fail("usage: --compare <left><right>");
         compareLeft = args[1];
         compareRight = args[2];
     } else if (mode == "--compare-html") {
-        if (args.size() < 4) return fail("usage: --compare-html <output> <left> <right>");
+        if (args.size() < 4) return fail("usage: --compare-html <output><left><right>");
         outputPath = args[1];
         compareLeft = args[2];
         compareRight = args[3];
@@ -246,7 +246,7 @@ int main(int argc, char** argv) {
         if (args.size() < 2) return fail("usage: --inspect <file>");
         inputPath = args[1];
     } else if (mode == "--details") {
-        if (args.size() < 3) return fail("usage: --details <designator> <file>");
+        if (args.size() < 3) return fail("usage: --details <designator><file>");
         detailDesignator = args[1];
         inputPath = args[2];
     } else {
@@ -288,7 +288,7 @@ int main(int argc, char** argv) {
     // next to the board (or in ./library) is matched to the parts automatically.
     if (result.document.type == pcbv::DocType::PcbDoc) {
         const pcbv::LibraryAttachment attachment = pcbv::attachLibraryFolder(working, inputPath);
-        if (attachment.parts > 0) {
+        if (attachment.parts >0) {
             std::cout << "library: " << attachment.parts << " part(s) matched in "
                       << attachment.files.size() << " file(s)\n";
         }
@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
                 pcbv::attachModelsFromFile(drawing, args[i], &libraryError);
             if (!libraryError.empty()) {
                 std::cerr << "warning: " << args[i] << ": " << libraryError << "\n";
-            } else if (attached > 0) {
+            } else if (attached >0) {
                 std::cout << "models: " << attached << " part(s) from " << args[i] << "\n";
             }
         }
@@ -460,7 +460,7 @@ int main(int argc, char** argv) {
                     std::cout << "  " << padRight(pad.designator, 8) << padRight(pad.layerName, 16)
                               << padRight(pad.net, 24) << pcbv::formatMm(pad.width) << " x "
                               << pcbv::formatMm(pad.height) << " mm";
-                    if (pad.holeSize > 0) std::cout << "  hole " << pcbv::formatMm(pad.holeSize) << " mm";
+                    if (pad.holeSize >0) std::cout << "  hole " << pcbv::formatMm(pad.holeSize) << " mm";
                     std::cout << "\n";
                 }
             }

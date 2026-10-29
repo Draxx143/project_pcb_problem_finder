@@ -45,10 +45,10 @@ struct ThreeDLabel {
 struct ThreeDImage {
     int width = 0;
     int height = 0;
-    std::vector<std::uint32_t> pixels;
-    std::vector<ThreeDLabel> labels;
+    std::vector<std::uint32_t>pixels;
+    std::vector<ThreeDLabel>labels;
 
-    bool valid() const { return width > 0 && height > 0 && pixels.size() == static_cast<std::size_t>(width) * height; }
+    bool valid() const { return width >0 && height >0 && pixels.size() == static_cast<std::size_t>(width) * height; }
     std::uint32_t at(int x, int y) const {
         if (x < 0 || y < 0 || x >= width || y >= height) return 0;
         return pixels[static_cast<std::size_t>(y) * static_cast<std::size_t>(width) + static_cast<std::size_t>(x)];

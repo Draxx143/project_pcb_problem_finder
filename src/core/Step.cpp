@@ -26,7 +26,7 @@ Vec3d cross(const Vec3d& a, const Vec3d& b) {
 double norm(const Vec3d& a) { return std::sqrt(dot(a, a)); }
 Vec3d normalised(const Vec3d& a) {
     const double len = norm(a);
-    return len > 1e-12 ? a * (1.0 / len) : Vec3d{0.0, 0.0, 1.0};
+    return len >1e-12 ? a * (1.0 / len) : Vec3d{0.0, 0.0, 1.0};
 }
 
 // ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ struct Value {
     int ref = 0;
     double number = 0.0;
     std::string text;
-    std::vector<Value> items;
+    std::vector<Value>items;
 
     bool isRef() const { return kind == Kind::Ref; }
     bool isNumber() const { return kind == Kind::Number; }
@@ -87,8 +87,8 @@ std::string parseStringLiteral(const std::string& text, std::size_t& pos) {
     return out;
 }
 
-std::vector<Value> parseList(const std::string& text, std::size_t& pos) {
-    std::vector<Value> items;
+std::vector<Value>parseList(const std::string& text, std::size_t& pos) {
+    std::vector<Value>items;
     ++pos;   // '('
     for (;;) {
         skipSpaces(text, pos);
@@ -168,7 +168,7 @@ Value parseValue(const std::string& text, std::size_t& pos) {
 struct Entity {
     int id = 0;
     std::string type;
-    std::vector<Value> args;
+    std::vector<Value>args;
 };
 
 // ---------------------------------------------------------------------------
@@ -211,7 +211,7 @@ private:
 
     bool tessellateFace(const Entity& face, StepMesh& mesh, std::string& why) const;
 
-    std::map<int, Entity> entities_;
+    std::map<int, Entity>entities_;
 };
 
 Vec3d Reader::point(int id) const {
@@ -253,11 +253,11 @@ void Reader::buildCurve(int edgeCurveId, bool fromStart, std::vector<Vec3d>& out
     const Vec3d start = startVertex != nullptr ? point(startVertex->args.at(1).refOrZero()) : Vec3d{};
     const Vec3d end = endVertex != nullptr ? point(endVertex->args.at(1).refOrZero()) : Vec3d{};
 
-    std::vector<Vec3d> points;
+    std::vector<Vec3d>points;
     if (const Entity* circle = entityOfType(curveId, "CIRCLE")) {
         const Placement p = placement(circle->args.at(1).refOrZero());
         const double radius = circle->args.at(2).num();
-        if (radius > 1e-9) {
+        if (radius >1e-9) {
             // The angle of a point on the circle, in radians. (It used to be divided by the
             // radius, which shortened every partial arc: a cylinder side bounded by arcs
             // then collapsed into a flat disc.)
@@ -284,7 +284,7 @@ void Reader::buildCurve(int edgeCurveId, bool fromStart, std::vector<Vec3d>& out
         const Placement p = placement(ellipse->args.at(1).refOrZero());
         const double major = ellipse->args.at(2).num();
         const double minor = ellipse->args.at(3).num();
-        if (major > 1e-9 && minor > 1e-9) {
+        if (major >1e-9 && minor >1e-9) {
             auto angleOf = [&p](const Vec3d& world) {
                 const Vec3d relative = world - p.origin;
                 return std::atan2(dot(relative, p.y) / 1.0, dot(relative, p.x) / 1.0);
@@ -333,7 +333,7 @@ void Reader::buildLoop(int edgeLoopId, std::vector<Vec3d>& out) const {
         if (edge.isRef()) buildEdge(edge.ref, out);
     }
     // Drop the duplicated vertices between consecutive edges.
-    std::vector<Vec3d> cleaned;
+    std::vector<Vec3d>cleaned;
     for (const Vec3d& point3d : out) {
         if (!cleaned.empty()) {
             const Vec3d delta = point3d - cleaned.back();
@@ -341,19 +341,19 @@ void Reader::buildLoop(int edgeLoopId, std::vector<Vec3d>& out) const {
         }
         cleaned.push_back(point3d);
     }
-    if (cleaned.size() > 1 && norm(cleaned.front() - cleaned.back()) < 1e-7) cleaned.pop_back();
+    if (cleaned.size() >1 && norm(cleaned.front() - cleaned.back()) < 1e-7) cleaned.pop_back();
     out.swap(cleaned);
 }
 
 namespace {
 
 /// Ear clipping for a simple polygon (counter clockwise). Returns triangle indices.
-std::vector<int> triangulate(const std::vector<Point2>& points) {
-    std::vector<int> indices;
+std::vector<int>triangulate(const std::vector<Point2>& points) {
+    std::vector<int>indices;
     const int count = static_cast<int>(points.size());
     if (count < 3) return indices;
 
-    std::vector<int> remaining(static_cast<std::size_t>(count));
+    std::vector<int>remaining(static_cast<std::size_t>(count));
     for (int i = 0; i < count; ++i) remaining[static_cast<std::size_t>(i)] = i;
 
     auto area = [&points](int a, int b, int c) {
@@ -364,7 +364,7 @@ std::vector<int> triangulate(const std::vector<Point2>& points) {
     };
 
     int guard = 0;
-    while (remaining.size() > 3 && guard < count * count + 16) {
+    while (remaining.size() >3 && guard < count * count + 16) {
         bool clipped = false;
         for (std::size_t i = 0; i < remaining.size(); ++i) {
             const int a = remaining[(i + remaining.size() - 1) % remaining.size()];
@@ -509,7 +509,7 @@ bool Reader::tessellateFace(const Entity& face, StepMesh& mesh, std::string& why
         return false;
     }
 
-    std::vector<Vec3d> world;
+    std::vector<Vec3d>world;
     buildLoop(loopId, world);
     if (world.size() < 3) {
         ++mesh.skippedFaces;
@@ -517,7 +517,7 @@ bool Reader::tessellateFace(const Entity& face, StepMesh& mesh, std::string& why
     }
 
     const Placement& p = surface.placement;
-    std::vector<Point2> projected;
+    std::vector<Point2>projected;
     projected.reserve(world.size());
     for (const Vec3d& vertex : world) {
         const Vec3d relative = vertex - p.origin;
@@ -554,8 +554,8 @@ bool Reader::tessellateFace(const Entity& face, StepMesh& mesh, std::string& why
     if (surface.kind == SurfaceKind::Cylinder || surface.kind == SurfaceKind::Cone ||
         surface.kind == SurfaceKind::Sphere) {
         for (std::size_t i = 1; i < projected.size(); ++i) {
-            while (projected[i].u - projected[i - 1].u > kPi * surface.a) projected[i].u -= 2.0 * kPi * surface.a;
-            while (projected[i - 1].u - projected[i].u > kPi * surface.a) projected[i].u += 2.0 * kPi * surface.a;
+            while (projected[i].u - projected[i - 1].u >kPi * surface.a) projected[i].u -= 2.0 * kPi * surface.a;
+            while (projected[i - 1].u - projected[i].u >kPi * surface.a) projected[i].u += 2.0 * kPi * surface.a;
         }
     }
 
@@ -599,7 +599,7 @@ bool Reader::tessellateFace(const Entity& face, StepMesh& mesh, std::string& why
             vMax = std::max(vMax, pt.v);
         }
         const double vTolerance = std::max(1e-6, (vMax - vMin) * 0.02);
-        if (vMax - vMin > vTolerance * 4.0) {
+        if (vMax - vMin >vTolerance * 4.0) {
             int lowCount = 0, highCount = 0;
             double uMin = 1e18, uMax = -1e18;
             for (const Point2& pt : projected) {
@@ -613,7 +613,7 @@ bool Reader::tessellateFace(const Entity& face, StepMesh& mesh, std::string& why
                 }
             }
             const double sweep = uMax - uMin;
-            if (lowCount >= 2 && highCount >= 2 && sweep > 1e-6) {
+            if (lowCount >= 2 && highCount >= 2 && sweep >1e-6) {
                 const double step = std::max(surface.a, 0.05) * kPi / 16.0;
                 const int segments = std::clamp(static_cast<int>(std::ceil(sweep / step)), 2, 128);
                 StepTriangle band;
@@ -624,13 +624,13 @@ bool Reader::tessellateFace(const Entity& face, StepMesh& mesh, std::string& why
                     const Vec3d b = toWorld(Point2{u1, vMin});
                     const Vec3d c = toWorld(Point2{u1, vMax});
                     const Vec3d d = toWorld(Point2{u0, vMax});
-                    if (norm(cross(b - a, c - a)) > 1e-10) {
+                    if (norm(cross(b - a, c - a)) >1e-10) {
                         band.a[0] = a.x; band.a[1] = a.y; band.a[2] = a.z;
                         band.b[0] = b.x; band.b[1] = b.y; band.b[2] = b.z;
                         band.c[0] = c.x; band.c[1] = c.y; band.c[2] = c.z;
                         mesh.add(band);
                     }
-                    if (norm(cross(c - a, d - a)) > 1e-10) {
+                    if (norm(cross(c - a, d - a)) >1e-10) {
                         band.a[0] = a.x; band.a[1] = a.y; band.a[2] = a.z;
                         band.b[0] = c.x; band.b[1] = c.y; band.b[2] = c.z;
                         band.c[0] = d.x; band.c[1] = d.y; band.c[2] = d.z;
@@ -643,9 +643,9 @@ bool Reader::tessellateFace(const Entity& face, StepMesh& mesh, std::string& why
         }
     }
 
-    std::vector<Point2> oriented = projected;
+    std::vector<Point2>oriented = projected;
     if (polygonArea(oriented) < 0.0) std::reverse(oriented.begin(), oriented.end());
-    std::vector<int> indices = triangulate(oriented);
+    std::vector<int>indices = triangulate(oriented);
     if (indices.size() < 3) {
         ++mesh.skippedFaces;
         return false;
@@ -680,7 +680,7 @@ std::string unwrapComplexEntity(const std::string& body, std::string& type) {
         "B_SPLINE_SURFACE",   "B_SPLINE_CURVE", "PLANE", "CIRCLE", "ELLIPSE", "LINE",
     };
     struct Part { std::string name; std::string args; };
-    std::vector<Part> parts;
+    std::vector<Part>parts;
     std::size_t i = 0;
     while (i < body.size()) {
         // A part looks like NAME(...) or NAME().
@@ -698,7 +698,7 @@ std::string unwrapComplexEntity(const std::string& body, std::string& type) {
         if (open >= body.size() || body[open] != '(') continue;
         std::size_t scan = open + 1;
         int depth = 1;
-        while (scan < body.size() && depth > 0) {
+        while (scan < body.size() && depth >0) {
             if (body[scan] == '\'') {
                 ++scan;
                 while (scan < body.size() && body[scan] != '\'') ++scan;
@@ -709,7 +709,7 @@ std::string unwrapComplexEntity(const std::string& body, std::string& type) {
             if (body[scan] == ')') --depth;
             ++scan;
         }
-        parts.push_back({name, body.substr(open + 1, scan > open + 1 ? scan - open - 2 : 0)});
+        parts.push_back({name, body.substr(open + 1, scan >open + 1 ? scan - open - 2 : 0)});
         i = scan;
     }
     for (const char* wanted : kPreferred) {
@@ -764,7 +764,7 @@ bool Reader::parse(const std::string& text, StepMesh& mesh, std::string* error) 
         if (pos >= limit || text[pos] != '(') continue;
         std::size_t scan = pos + 1;
         int depth = 1;
-        while (scan < limit && depth > 0) {
+        while (scan < limit && depth >0) {
             const char c = text[scan];
             if (c == '\'') {
                 ++scan;
@@ -785,7 +785,7 @@ bool Reader::parse(const std::string& text, StepMesh& mesh, std::string* error) 
             if (c == ')') --depth;
             ++scan;
         }
-        std::string arguments = text.substr(pos + 1, scan > pos + 1 ? scan - pos - 2 : 0);
+        std::string arguments = text.substr(pos + 1, scan >pos + 1 ? scan - pos - 2 : 0);
         // Some exporters write a complex instance instead of a single entity:
         //     #12 = ( BOUNDED_SURFACE() CYLINDRICAL_SURFACE('',#13,0.8) );
         // The geometry lives in one of the parts, so pick the most specific one and use its
@@ -847,7 +847,7 @@ bool Reader::parse(const std::string& text, StepMesh& mesh, std::string* error) 
             solid.type != "FACETED_BREP" && solid.type != "SHELL_BASED_SURFACE_MODEL") {
             continue;
         }
-        std::vector<int> shells;
+        std::vector<int>shells;
         if (solid.type == "MANIFOLD_SOLID_BREP" || solid.type == "FACETED_BREP") {
             shells.push_back(solid.args.at(1).refOrZero());
         } else if (solid.type == "BREP_WITH_VOIDS") {
@@ -857,7 +857,7 @@ bool Reader::parse(const std::string& text, StepMesh& mesh, std::string* error) 
             for (const Value& shell : solid.args.at(1).items) shells.push_back(shell.refOrZero());
         }
         ++solids;
-        std::vector<int> faceIds;
+        std::vector<int>faceIds;
         for (const int shellId : shells) {
             const Entity* shell = entity(shellId);
             if (shell == nullptr) continue;

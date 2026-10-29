@@ -28,8 +28,8 @@ std::string generatePickAndPlaceCsv(const Document& doc) {
 std::string generateGroupedBomCsv(const Document& doc) {
     std::ostringstream ss;
     ss << "Designator(s),Quantity,Footprint,Comment,Description\n";
-    std::map<std::string, std::vector<std::string>> groups;
-    std::map<std::string, Component> prototypes;
+    std::map<std::string, std::vector<std::string>>groups;
+    std::map<std::string, Component>prototypes;
 
     for (const auto& c : doc.components) {
         std::string key = c.footprint + "|" + c.comment;
@@ -62,7 +62,7 @@ SchematicPcbCheckResult validateSchVsPcb(const Document& schDoc, const Document&
     res.schematicComponents = static_cast<int>(schDoc.components.size());
     res.pcbComponents = static_cast<int>(pcbDoc.components.size());
 
-    std::set<std::string> schSet, pcbSet;
+    std::set<std::string>schSet, pcbSet;
     for (const auto& c : schDoc.components) schSet.insert(c.designator);
     for (const auto& c : pcbDoc.components) pcbSet.insert(c.designator);
 
@@ -80,9 +80,9 @@ SchematicPcbCheckResult validateSchVsPcb(const Document& schDoc, const Document&
     res.valid = res.missingOnPcb.empty() && res.extraOnPcb.empty();
     std::ostringstream sum;
     if (res.valid) {
-        sum << "✅ Schematic and PCB match perfectly (" << res.schematicComponents << " components verified).";
+        sum << " Schematic and PCB match perfectly (" << res.schematicComponents << " components verified).";
     } else {
-        sum << "⚠️ Mismatch detected! Sch components: " << res.schematicComponents << ", PCB components: " << res.pcbComponents;
+        sum << " Mismatch detected! Sch components: " << res.schematicComponents << ", PCB components: " << res.pcbComponents;
         if (!res.missingOnPcb.empty()) sum << " | Missing on PCB: " << res.missingOnPcb.size();
         if (!res.extraOnPcb.empty()) sum << " | Extra on PCB: " << res.extraOnPcb.size();
     }

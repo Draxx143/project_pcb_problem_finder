@@ -55,9 +55,9 @@ std::size_t searchableItemCount(const Document& document, const Library& library
            library.footprints.size() + library.symbols.size();
 }
 
-std::vector<SearchHit> searchDocument(const Document& document, const Library& library,
+std::vector<SearchHit>searchDocument(const Document& document, const Library& library,
                                       const std::string& needle, std::size_t maxHits) {
-    std::vector<SearchHit> hits;
+    std::vector<SearchHit>hits;
     const std::string needleLower = lowered(text::trim(needle));
     if (needleLower.empty() || maxHits == 0) return hits;
 
@@ -79,9 +79,9 @@ std::vector<SearchHit> searchDocument(const Document& document, const Library& l
 
         std::ostringstream detail;
         if (!c.comment.empty()) detail << c.comment;
-        if (!c.footprint.empty()) detail << (detail.tellp() > 0 ? " · " : "") << c.footprint;
-        if (c.padCount > 0) detail << (detail.tellp() > 0 ? " · " : "") << c.padCount << " pads";
-        if (c.pinCount > 0) detail << (detail.tellp() > 0 ? " · " : "") << c.pinCount << " pins";
+        if (!c.footprint.empty()) detail << (detail.tellp() >0 ? " · " : "") << c.footprint;
+        if (c.padCount >0) detail << (detail.tellp() >0 ? " · " : "") << c.padCount << " pads";
+        if (c.pinCount >0) detail << (detail.tellp() >0 ? " · " : "") << c.pinCount << " pins";
         add(SearchHit{SearchHit::Kind::Component, c.designator, detail.str(),
                       static_cast<int>(i)});
     }
@@ -90,7 +90,7 @@ std::vector<SearchHit> searchDocument(const Document& document, const Library& l
     // A net can exist without carrying copper yet (Altium keeps unused nets), so the net
     // list is searched as well as the per-net summary.
     {
-        std::set<std::string> seen;
+        std::set<std::string>seen;
         for (const Net& net : document.nets) {
             if (net.name.empty() || !seen.insert(net.name).second) continue;
             if (!contains(net.name, needleLower)) continue;
@@ -100,8 +100,8 @@ std::vector<SearchHit> searchDocument(const Document& document, const Library& l
             std::ostringstream detail;
             if (summary != document.netSummaries.end()) {
                 detail << summary->pads << " pads · " << summary->tracks << " tracks";
-                if (summary->vias > 0) detail << " · " << summary->vias << " vias";
-                if (summary->trackLength > 0.0) detail << " · " << mm(summary->trackLength) << " mm";
+                if (summary->vias >0) detail << " · " << summary->vias << " vias";
+                if (summary->trackLength >0.0) detail << " · " << mm(summary->trackLength) << " mm";
             } else {
                 detail << "no connections";
             }
@@ -112,8 +112,8 @@ std::vector<SearchHit> searchDocument(const Document& document, const Library& l
             if (!contains(summary.name, needleLower)) continue;
             std::ostringstream detail;
             detail << summary.pads << " pads · " << summary.tracks << " tracks";
-            if (summary.vias > 0) detail << " · " << summary.vias << " vias";
-            if (summary.trackLength > 0.0) detail << " · " << mm(summary.trackLength) << " mm";
+            if (summary.vias >0) detail << " · " << summary.vias << " vias";
+            if (summary.trackLength >0.0) detail << " · " << mm(summary.trackLength) << " mm";
             add(SearchHit{SearchHit::Kind::Net, summary.name, detail.str(), summary.index});
         }
     }
@@ -151,7 +151,7 @@ std::vector<SearchHit> searchDocument(const Document& document, const Library& l
         }
         std::ostringstream detail;
         detail << symbol.pins.size() << " pins";
-        if (symbol.partCount > 1) detail << " · " << symbol.partCount << " parts";
+        if (symbol.partCount >1) detail << " · " << symbol.partCount << " parts";
         add(SearchHit{SearchHit::Kind::Symbol, symbol.name, detail.str(), static_cast<int>(i)});
     }
 

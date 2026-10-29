@@ -17,11 +17,11 @@ namespace text {
 
 void appendUtf8(std::string& out, std::uint32_t codePoint);
 
-/// Windows-1252 bytes -> UTF-8.
+/// Windows-1252 bytes ->UTF-8.
 std::string fromCp1252(const std::uint8_t* data, std::size_t length);
 std::string fromCp1252(const std::string& raw);
 
-/// Raw bytes that are already UTF-8 -> std::string (invalid sequences are kept byte-for-byte).
+/// Raw bytes that are already UTF-8 ->std::string (invalid sequences are kept byte-for-byte).
 std::string fromUtf8(const std::uint8_t* data, std::size_t length);
 
 std::string upper(std::string value);
@@ -33,7 +33,7 @@ bool equalsNoCase(const std::string& a, const std::string& b);
 /// Parses a property list. `bytesAreUtf8` selects the decoding of plain values;
 /// values tagged with `%UTF8%KEY` are always taken as UTF-8 (Altium's override for
 /// characters outside the local code page).
-std::vector<Property> parseParameters(const std::uint8_t* data, std::size_t length,
+std::vector<Property>parseParameters(const std::uint8_t* data, std::size_t length,
                                       bool bytesAreUtf8 = false);
 
 /// Applies the binary-form Unicode overrides (|UNICODE=EXISTS|UNICODE__KEY=72,105|...).

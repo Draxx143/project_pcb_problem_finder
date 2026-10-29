@@ -29,13 +29,13 @@ DrcReport runDrcChecks(const Document& doc, const DrcRules& rules) {
 
     // 1. Check Tracks (Width & Power Rail Capacity)
     for (const auto& t : doc.geometry.tracks) {
-        if (t.width > 0.0 && t.width < rules.minTrackWidthMil) {
+        if (t.width >0.0 && t.width < rules.minTrackWidthMil) {
             rep.violations.push_back({
                 DrcSeverity::Warning, "DRC-TRK-01", "Minimum Track Width Violation",
                 "Track width (" + std::to_string(t.width) + " mil) is below IPC limit (" + std::to_string(rules.minTrackWidthMil) + " mil).",
                 t.net, fmtCoord(t.x1, t.y1), t.x1, t.y1
             });
-        } else if (!t.net.empty() && isPowerNet(t.net) && t.width > 0.0 && t.width < rules.minPowerTrackWidthMil) {
+        } else if (!t.net.empty() && isPowerNet(t.net) && t.width >0.0 && t.width < rules.minPowerTrackWidthMil) {
             rep.violations.push_back({
                 DrcSeverity::Info, "DFM-PWR-01", "Narrow Power Rail Trace",
                 "Power net \"" + t.net + "\" routed with " + std::to_string(t.width) + " mil width (recommended >= 15 mil).",
@@ -46,7 +46,7 @@ DrcReport runDrcChecks(const Document& doc, const DrcRules& rules) {
 
     // 2. Check Vias (Drill Size & Annular Ring Break-out)
     for (const auto& v : doc.geometry.vias) {
-        if (v.hole > 0.0 && v.hole < rules.minViaHoleMil) {
+        if (v.hole >0.0 && v.hole < rules.minViaHoleMil) {
             rep.violations.push_back({
                 DrcSeverity::Warning, "DRC-VIA-01", "Micro-Drill Size Warning",
                 "Via drill hole (" + std::to_string(v.hole) + " mil) requires high-cost laser/micro drilling.",
@@ -54,7 +54,7 @@ DrcReport runDrcChecks(const Document& doc, const DrcRules& rules) {
             });
         }
         double annular = (v.diameter - v.hole) * 0.5;
-        if (v.diameter > 0.0 && annular < rules.minAnnularRingMil) {
+        if (v.diameter >0.0 && annular < rules.minAnnularRingMil) {
             rep.violations.push_back({
                 annular <= 1.0 ? DrcSeverity::Critical : DrcSeverity::Warning,
                 "DRC-VIA-02", "Insufficient Via Annular Ring",
@@ -138,7 +138,7 @@ std::string generateCommercialDrcReportHtml(const Document& doc, const DrcReport
       << ".info { color:#40c4ff; }"
       << "</style></head><body>"
       << "<div class='header'>"
-      << "<div><div class='brand'>🛡️ CIRCUITGUARD PRO</div><div class='sub'>Industrial Design Rule Check (DRC) & DFM Sign-Off Report — Click any coordinate to Cross-Probe</div></div>"
+      << "<div><div class='brand'>CIRCUITGUARD PRO</div><div class='sub'>Industrial Design Rule Check (DRC) & DFM Sign-Off Report — Click any coordinate to Cross-Probe</div></div>"
       << "<div class='sub'>Board: <b>" << doc.fileName << "</b><br>Size: " << std::fixed << std::setprecision(1) << doc.bounds.width() << " x " << doc.bounds.height() << " mil</div>"
       << "</div>"
       << "<div class='cards'>"
@@ -150,7 +150,7 @@ std::string generateCommercialDrcReportHtml(const Document& doc, const DrcReport
       << "<table><thead><tr><th>Severity</th><th>Code</th><th>Issue</th><th>Net</th><th>Location (Click to Zoom)</th><th>Details</th></tr></thead><tbody>";
 
     if (rep.violations.empty()) {
-        h << "<tr><td colspan='6' style='text-align:center;color:#00e676;padding:24px;'>✅ Zero DRC Violations Detected — Board is Ready for Manufacturing!</td></tr>";
+        h << "<tr><td colspan='6' style='text-align:center;color:#00e676;padding:24px;'>Zero DRC Violations Detected — Board is Ready for Manufacturing!</td></tr>";
     } else {
         for (const auto& v : rep.violations) {
             std::string cls = v.severity == DrcSeverity::Critical ? "crit" : (v.severity == DrcSeverity::Warning ? "warn" : "info");
@@ -159,7 +159,7 @@ std::string generateCommercialDrcReportHtml(const Document& doc, const DrcReport
             if (v.location != "Global Netlist") {
                 locHtml = "<a href=\"drc://locate?x=" + std::to_string(v.x) + "&y=" + std::to_string(v.y) +
                           "&net=" + v.net + "&code=" + v.code +
-                          "\" style=\"color:#00e5ff;text-decoration:none;font-weight:700;\">🎯 " + v.location + "</a>";
+                          "\" style=\"color:#00e5ff;text-decoration:none;font-weight:700;\">" + v.location + "</a>";
             }
             h << "<tr><td class='" << cls << "'>" << lbl << "</td><td><code>" << v.code << "</code></td><td><b>"
               << v.title << "</b></td><td>" << (v.net.empty() ? "-" : v.net) << "</td><td>" << locHtml

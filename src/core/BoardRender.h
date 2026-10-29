@@ -25,7 +25,7 @@ struct RenderPrimitive {
     bool dashed = false;
     bool closed = true;   ///< Polygon only: join the last point back to the first
 
-    std::vector<Point> points;       ///< Line: 2 points; Polygon: n points
+    std::vector<Point>points;       ///< Line: 2 points; Polygon: n points
     Point center;                    ///< Circle
     double radius = 0.0;             ///< Circle, device units
 
@@ -47,12 +47,12 @@ struct BoardRenderList {
     double boardWidthMil = 0.0;
     double boardHeightMil = 0.0;
     double unitsPerMil = 1.0;  ///< device units per mil (used to recover real sizes)
-    std::vector<RenderPrimitive> primitives;
+    std::vector<RenderPrimitive>primitives;
 
     /// The board edge in the same device space as the primitives (0 = no outline).
     /// Everything else draws the board itself; the 3D view needs the exact same outline
     /// it paints in 2D, otherwise the parts and the board drift apart.
-    std::vector<Point> boardOutline;
+    std::vector<Point>boardOutline;
 
     bool empty() const { return primitives.empty(); }
 };

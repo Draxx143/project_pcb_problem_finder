@@ -19,7 +19,7 @@ struct FieldChange {
 struct ChangedPart {
     std::string designator;
     std::string label;    ///< value/comment, so the row is recognisable
-    std::vector<FieldChange> changes;
+    std::vector<FieldChange>changes;
 };
 
 /// Result of comparing a document against a newer (or older) revision of it.
@@ -29,11 +29,11 @@ struct CompareResult {
     std::size_t leftCount = 0;
     std::size_t rightCount = 0;
 
-    std::vector<Component> added;     ///< present only in the right document
-    std::vector<Component> removed;   ///< present only in the left document
-    std::vector<ChangedPart> changed;
-    std::vector<std::string> netsAdded;    ///< PCB documents only
-    std::vector<std::string> netsRemoved;
+    std::vector<Component>added;     ///< present only in the right document
+    std::vector<Component>removed;   ///< present only in the left document
+    std::vector<ChangedPart>changed;
+    std::vector<std::string>netsAdded;    ///< PCB documents only
+    std::vector<std::string>netsRemoved;
 
     bool identical() const {
         return added.empty() && removed.empty() && changed.empty() && netsAdded.empty() &&

@@ -22,7 +22,7 @@ struct StepTriangle {
 };
 
 struct StepMesh {
-    std::vector<StepTriangle> triangles;
+    std::vector<StepTriangle>triangles;
     double minX = 1e18, minY = 1e18, minZ = 1e18;
     double maxX = -1e18, maxY = -1e18, maxZ = -1e18;
     int faces = 0;         ///< faces that were tessellated

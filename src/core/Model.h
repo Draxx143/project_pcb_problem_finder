@@ -89,7 +89,7 @@ struct ViaFeature {
 
 /// A filled polygon (PcbDoc "Region", also used for the board shape).
 struct RegionFeature {
-    std::vector<Point> outline;
+    std::vector<Point>outline;
     int layer = 0;
     bool boardOutline = false;  ///< true for the board shape / cut-outs
     bool pour = false;          ///< copper pour (Polygon record); fill not computed
@@ -117,14 +117,14 @@ struct TextFeature {
 
 /// Every drawable primitive of a PCB document (used by the board view / SVG export).
 struct PcbGeometry {
-    std::vector<TrackFeature> tracks;
-    std::vector<ArcFeature> arcs;
-    std::vector<ViaFeature> vias;
-    std::vector<RegionFeature> regions;
-    std::vector<FillFeature> fills;
-    std::vector<TextFeature> texts;
-    std::vector<Pad> pads;
-    std::vector<Point> outline;   ///< board contour (ASCII exports and binary Board6 when available)
+    std::vector<TrackFeature>tracks;
+    std::vector<ArcFeature>arcs;
+    std::vector<ViaFeature>vias;
+    std::vector<RegionFeature>regions;
+    std::vector<FillFeature>fills;
+    std::vector<TextFeature>texts;
+    std::vector<Pad>pads;
+    std::vector<Point>outline;   ///< board contour (ASCII exports and binary Board6 when available)
 
     bool empty() const {
         return tracks.empty() && arcs.empty() && vias.empty() && regions.empty() &&
@@ -184,9 +184,9 @@ struct Component {
     int modelIndex = -1;         // index into Document::models (-1 = no 3D model)
     std::string libraryPattern;  // library item this part was matched to ("" = none)
     int componentIndex = -1;     // index inside Components6 (PCB)
-    std::vector<Pin> pins;
-    std::vector<Pad> pads;
-    std::vector<Property> properties; // every raw parameter, in file order
+    std::vector<Pin>pins;
+    std::vector<Pad>pads;
+    std::vector<Property>properties; // every raw parameter, in file order
 };
 
 struct Net {
@@ -202,7 +202,7 @@ struct NetSummary {
     int tracks = 0;
     int vias = 0;
     double trackLength = 0.0;              ///< mil, sum of segment lengths
-    std::vector<std::string> connections;  ///< "R1-2" style pad references, sorted
+    std::vector<std::string>connections;  ///< "R1-2" style pad references, sorted
 };
 
 /// How much geometry sits on one layer (drives the Layers panel).
@@ -264,27 +264,27 @@ struct Document {
     std::string lastSaved;       // DATE + TIME from Board6 when available
     std::uint64_t fileSize = 0;
 
-    std::vector<Component> components;
+    std::vector<Component>components;
     /// Real 3D models attached to this document (from a footprint library); a component
     /// points into this list with Component::modelIndex.
-    std::vector<EmbeddedModel> models;
-    std::vector<Net> nets;
-    std::vector<FileEntry> structure;  // OLE container tree (binary documents only)
+    std::vector<EmbeddedModel>models;
+    std::vector<Net>nets;
+    std::vector<FileEntry>structure;  // OLE container tree (binary documents only)
 
     /// Record-type histogram (ASCII exports): {"Pad", 102}, {"Track", 465}, ...
-    std::vector<std::pair<std::string, int>> recordTypes;
+    std::vector<std::pair<std::string, int>>recordTypes;
 
     PcbGeometry geometry;   ///< drawable primitives (empty for schematics)
 
     /// Net / layer indexes (PCB documents; computed once after parsing).
-    std::vector<NetSummary> netSummaries;
-    std::vector<LayerUsage> layerUsage;
+    std::vector<NetSummary>netSummaries;
+    std::vector<LayerUsage>layerUsage;
 
     PcbCounts pcb;
     SchCounts sch;
     Bounds bounds;
 
-    std::vector<std::string> warnings;
+    std::vector<std::string>warnings;
 
     /// Convenience: units used for coordinates in this document.
     std::string unitLabel() const { return "mil"; }

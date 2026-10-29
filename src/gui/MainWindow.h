@@ -31,6 +31,7 @@ class QTabBar;
 class QToolBar;
 
 class BoardView;
+class SchematicView;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -142,7 +143,7 @@ private:
 
     pcbv::Document document_;      ///< the document of the active tab
     bool hasDocument_ = false;
-    std::vector<DocumentSlot> slots_;
+    std::vector<DocumentSlot>slots_;
     int active_ = -1;
     QTabBar* docTabs_ = nullptr;
     bool switching_ = false;
@@ -156,6 +157,7 @@ private:
     QLabel* libraryInfo_ = nullptr;
     QLineEdit* libraryFilter_ = nullptr;
     BoardView* boardView_ = nullptr;
+    SchematicView* schematicView_ = nullptr;
     QTableWidget* table_ = nullptr;
     QTableWidget* bomTable_ = nullptr;
     QLabel* bomInfo_ = nullptr;

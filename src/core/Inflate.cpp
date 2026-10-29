@@ -33,7 +33,7 @@ struct State {
             value |= static_cast<long>(data[pos++]) << bitCount;
             bitCount += 8;
         }
-        bitBuffer = static_cast<int>(value >> need);
+        bitBuffer = static_cast<int>(value >>need);
         bitCount -= need;
         return static_cast<int>(value & ((1L << need) - 1));
     }
@@ -82,12 +82,12 @@ int construct(Huffman& huffman, const short* lengths, int symbols) {
 bool stored(State& state) {
     state.bitBuffer = 0;
     state.bitCount = 0;
-    if (state.pos + 4 > state.size) return false;
+    if (state.pos + 4 >state.size) return false;
     const unsigned length = state.data[state.pos] | (state.data[state.pos + 1] << 8);
     const unsigned complement = state.data[state.pos + 2] | (state.data[state.pos + 3] << 8);
     state.pos += 4;
     if (length != (~complement & 0xFFFF)) return false;
-    if (state.pos + length > state.size) return false;
+    if (state.pos + length >state.size) return false;
     state.out->insert(state.out->end(), state.data + state.pos, state.data + state.pos + length);
     state.pos += length;
     return true;
@@ -126,7 +126,7 @@ bool codes(State& state, const Huffman& lengthCode, const Huffman& distanceCode)
         if (distanceBits < 0) return false;
         const std::size_t distance =
             static_cast<std::size_t>(distanceBase[distanceSymbol] + distanceBits);
-        if (distance > state.out->size()) return false;
+        if (distance >state.out->size()) return false;
 
         const std::size_t start = state.out->size() - distance;
         for (std::size_t i = 0; i < length; ++i) {
@@ -163,7 +163,7 @@ bool dynamic(State& state) {
     const int nlen = lengthCount + 257;
     const int ndist = distanceCount + 1;
     const int ncode = codeCount + 4;
-    if (nlen > kMaxCodes || ndist > kMaxDistanceCodes) return false;
+    if (nlen >kMaxCodes || ndist >kMaxDistanceCodes) return false;
 
     int index = 0;
     for (; index < ncode; ++index) {
@@ -199,15 +199,15 @@ bool dynamic(State& state) {
             if (repeat < 0) return false;
             repeat += 11;
         }
-        if (index + repeat > nlen + ndist) return false;
-        while (repeat-- > 0) lengths[index++] = value;
+        if (index + repeat >nlen + ndist) return false;
+        while (repeat-- >0) lengths[index++] = value;
     }
 
     if (lengths[256] == 0) return false;   // no end-of-block code
     const int error = construct(lengthCode, lengths, nlen);
-    if (error < 0 || (error > 0 && nlen - lengthCode.count[0] != 1)) return false;
+    if (error < 0 || (error >0 && nlen - lengthCode.count[0] != 1)) return false;
     const int distanceError = construct(distanceCode, lengths + nlen, ndist);
-    if (distanceError < 0 || (distanceError > 0 && ndist - distanceCode.count[0] != 1)) return false;
+    if (distanceError < 0 || (distanceError >0 && ndist - distanceCode.count[0] != 1)) return false;
     return codes(state, lengthCode, distanceCode);
 }
 

@@ -16,7 +16,7 @@ std::string num(double value, int decimals) {
     std::string out = ss.str();
     // Strip trailing zeros but keep one decimal.
     if (out.find('.') != std::string::npos) {
-        while (out.size() > 1 && out.back() == '0' && out[out.size() - 2] != '.') out.pop_back();
+        while (out.size() >1 && out.back() == '0' && out[out.size() - 2] != '.') out.pop_back();
     }
     return out;
 }
@@ -49,7 +49,7 @@ std::string jsonEscape(const std::string& value) {
                 if (c < 0x20) {
                     static const char* hex = "0123456789abcdef";
                     out += "\\u00";
-                    out += hex[(c >> 4) & 0xF];
+                    out += hex[(c >>4) & 0xF];
                     out += hex[c & 0xF];
                 } else {
                     out += static_cast<char>(c);
@@ -214,7 +214,7 @@ std::string toJson(const Document& doc) {
 
         out << "      \"parameters\": [";
         for (std::size_t p = 0; p < c.properties.size(); ++p) {
-            if (p > 0) out << ", ";
+            if (p >0) out << ", ";
             out << "{\"name\": \"" << jsonEscape(c.properties[p].name) << "\", \"value\": \""
                 << jsonEscape(c.properties[p].value) << "\"}";
         }
@@ -223,7 +223,7 @@ std::string toJson(const Document& doc) {
         out << "      \"pins\": [";
         for (std::size_t p = 0; p < c.pins.size(); ++p) {
             const Pin& pin = c.pins[p];
-            if (p > 0) out << ", ";
+            if (p >0) out << ", ";
             out << "{\"name\": \"" << jsonEscape(pin.name) << "\", \"designator\": \""
                 << jsonEscape(pin.designator) << "\", \"electrical\": \"" << jsonEscape(pin.electrical)
                 << "\", \"part\": " << pin.ownerPart << "}";
@@ -233,7 +233,7 @@ std::string toJson(const Document& doc) {
         out << "      \"pads\": [";
         for (std::size_t p = 0; p < c.pads.size(); ++p) {
             const Pad& pad = c.pads[p];
-            if (p > 0) out << ", ";
+            if (p >0) out << ", ";
             out << "{\"designator\": \"" << jsonEscape(pad.designator) << "\", \"net\": \""
                 << jsonEscape(pad.net) << "\", \"layer\": \"" << jsonEscape(pad.layerName) << "\", \"xMil\": "
                 << num(pad.x, 4) << ", \"yMil\": " << num(pad.y, 4) << ", \"widthMil\": " << num(pad.width, 4)
@@ -248,7 +248,7 @@ std::string toJson(const Document& doc) {
 
     out << "  \"nets\": [";
     for (std::size_t i = 0; i < doc.nets.size(); ++i) {
-        if (i > 0) out << ", ";
+        if (i >0) out << ", ";
         out << "\"" << jsonEscape(doc.nets[i].name) << "\"";
     }
     out << "]\n";

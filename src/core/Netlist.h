@@ -23,7 +23,7 @@ struct NetNode {
 /// A net and everything that is soldered to it.
 struct NetConnection {
     std::string name;
-    std::vector<NetNode> nodes;
+    std::vector<NetNode>nodes;
 
     /// "R1-2, C5-1, …" — the joined labels.
     std::string labelList(std::size_t limit = 0) const;
@@ -34,7 +34,7 @@ const char* noNetName();
 
 /// Builds the netlist of a board (empty for schematics). Nets are sorted naturally,
 /// the nodes of a net are sorted by designator and then by pad name.
-std::vector<NetConnection> buildNetlist(const Document& document);
+std::vector<NetConnection>buildNetlist(const Document& document);
 
 /// Nets with a single pad: almost always routing that was never finished.
 int danglingNetCount(const std::vector<NetConnection>& netlist);

@@ -91,7 +91,7 @@ std::string groupKey(const Component& component) {
 std::string BomEntry::designatorList() const {
     std::string text;
     for (std::size_t i = 0; i < designators.size(); ++i) {
-        if (i > 0) text += ", ";
+        if (i >0) text += ", ";
         text += designators[i];
     }
     return text;
@@ -123,9 +123,9 @@ std::string componentLayers(const Component& component) {
     return layer;
 }
 
-std::vector<BomEntry> buildBom(const Document& document) {
-    std::map<std::string, std::size_t> byKey;
-    std::vector<BomEntry> entries;
+std::vector<BomEntry>buildBom(const Document& document) {
+    std::map<std::string, std::size_t>byKey;
+    std::vector<BomEntry>entries;
 
     for (const auto& component : document.components) {
         const std::string key = groupKey(component);
@@ -141,7 +141,7 @@ std::vector<BomEntry> buildBom(const Document& document) {
             entry.supplierPartNumber = component.supplierPartNumber;
             entry.pins = component.pinCount;
             entry.pads = component.padCount;
-            entry.throughHole = component.throughHolePads > 0;
+            entry.throughHole = component.throughHolePads >0;
             entry.dnp = isDoNotPopulate(component);
             it = byKey.emplace(key, entries.size()).first;
             entries.push_back(std::move(entry));
@@ -151,7 +151,7 @@ std::vector<BomEntry> buildBom(const Document& document) {
         entry.quantity += 1;
         entry.pins = std::max(entry.pins, component.pinCount);
         entry.pads = std::max(entry.pads, component.padCount);
-        entry.throughHole = entry.throughHole || component.throughHolePads > 0;
+        entry.throughHole = entry.throughHole || component.throughHolePads >0;
         entry.dnp = entry.dnp || isDoNotPopulate(component);
         if (entry.description.empty()) entry.description = component.description;
         if (entry.supplier.empty()) entry.supplier = component.supplier;
@@ -184,7 +184,7 @@ std::vector<BomEntry> buildBom(const Document& document) {
 }
 
 std::string bomToCsv(const Document& document) {
-    const std::vector<BomEntry> entries = buildBom(document);
+    const std::vector<BomEntry>entries = buildBom(document);
     std::ostringstream out;
     out << "Qty,Designators,Comment,Footprint,Manufacturer,PartNumber,Supplier,SupplierPartNumber,"
            "Description,Pins,Pads,Layers,DNP,File\r\n";
@@ -201,7 +201,7 @@ std::string bomToCsv(const Document& document) {
 }
 
 std::string bomToHtml(const Document& document) {
-    const std::vector<BomEntry> entries = buildBom(document);
+    const std::vector<BomEntry>entries = buildBom(document);
     std::ostringstream out;
     out << "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
            "<title>BOM — "
@@ -242,7 +242,7 @@ std::string bomToHtml(const Document& document) {
 }
 
 std::string bomSummary(const Document& document) {
-    const std::vector<BomEntry> entries = buildBom(document);
+    const std::vector<BomEntry>entries = buildBom(document);
     int parts = 0;
     int dnp = 0;
     for (const auto& entry : entries) {
@@ -252,7 +252,7 @@ std::string bomSummary(const Document& document) {
     std::ostringstream out;
     out << entries.size() << (entries.size() == 1 ? " line" : " lines") << " · " << parts
         << (parts == 1 ? " part" : " parts");
-    if (dnp > 0) out << " · " << dnp << " DNP";
+    if (dnp >0) out << " · " << dnp << " DNP";
     return out.str();
 }
 

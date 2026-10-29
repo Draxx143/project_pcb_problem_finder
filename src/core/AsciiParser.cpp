@@ -2,7 +2,7 @@
 //   * "PCB ASCII File (*.PcbDoc)"          — one "|RECORD=..." line per object
 //   * "Advanced Schematic ASCII (*.SchDoc)" — same record numbers as the binary format
 //
-// ASCII files are what Altium produces with File -> Save As -> "PCB ASCII File".
+// ASCII files are what Altium produces with File ->Save As ->"PCB ASCII File".
 // They are plain text, so the OLE2/Compound-File reader cannot open them; this
 // module handles that variant (a common source of "not a compound file" errors).
 #include "AltiumInternal.h"
@@ -34,15 +34,15 @@ std::string prettyLayer(const std::string& raw) {
 
 /// Reads the vertex list of an ASCII polygon/region: |MAINCONTOURVERTEXCOUNT=n|VX0=..|VY0=..|...
 /// Collects the vertex list Altium writes as VX0/VY0, VX1/VY1, ...
-std::vector<Point> outlinePoints(const std::vector<Property>& props) {
-    std::vector<Point> points;
+std::vector<Point>outlinePoints(const std::vector<Property>& props) {
+    std::vector<Point>points;
     // Region records may carry several contours (a pour plus its holes). Only the
     // first MAINCONTOURVERTEXCOUNT vertices describe the outer shape.
     int limit = 4096;
     const Property* mainCount = text::find(props, "MAINCONTOURVERTEXCOUNT");
     if (mainCount != nullptr) {
         const int value = parseInt(mainCount->value, 0);
-        if (value > 0) limit = value;
+        if (value >0) limit = value;
     }
     for (int i = 0; i < limit; ++i) {
         const Property* x = text::find(props, "VX" + std::to_string(i));
@@ -69,12 +69,12 @@ void addOutlineBounds(const std::vector<Property>& props, Bounds& bounds) {
 
 } // namespace
 
-std::vector<std::vector<Property>> readAsciiRecords(const std::vector<std::uint8_t>& bytes,
+std::vector<std::vector<Property>>readAsciiRecords(const std::vector<std::uint8_t>& bytes,
                                                     bool* wasUtf8) {
     const bool utf8 = text::isValidUtf8(bytes.data(), bytes.size());
     if (wasUtf8 != nullptr) *wasUtf8 = utf8;
 
-    std::vector<std::vector<Property>> records;
+    std::vector<std::vector<Property>>records;
     std::size_t start = 0;
     auto flush = [&](std::size_t end) {
         // Trim CR/LF/spaces around the record.
@@ -86,11 +86,11 @@ std::vector<std::vector<Property>> readAsciiRecords(const std::vector<std::uint8
                                bytes[begin] == static_cast<std::uint8_t>(0xBF)))
             ++begin;
         std::size_t last = end;
-        while (last > begin && (bytes[last - 1] == '\r' || bytes[last - 1] == '\n' ||
+        while (last >begin && (bytes[last - 1] == '\r' || bytes[last - 1] == '\n' ||
                                 bytes[last - 1] == ' ' || bytes[last - 1] == '\t'))
             --last;
-        if (last > begin) {
-            std::vector<Property> props =
+        if (last >begin) {
+            std::vector<Property>props =
                 text::parseParameters(bytes.data() + begin, last - begin, utf8);
             if (!props.empty()) records.push_back(std::move(props));
         }
@@ -107,7 +107,7 @@ std::vector<std::vector<Property>> readAsciiRecords(const std::vector<std::uint8
 }
 
 void parseAsciiPcb(const std::vector<std::uint8_t>& bytes, Document& document) {
-    const std::vector<std::vector<Property>> records = readAsciiRecords(bytes);
+    const std::vector<std::vector<Property>>records = readAsciiRecords(bytes);
     if (records.empty()) {
         document.warnings.push_back("ASCII file contains no |RECORD=| lines.");
         return;
@@ -116,11 +116,11 @@ void parseAsciiPcb(const std::vector<std::uint8_t>& bytes, Document& document) {
     document.container = Container::AsciiText;
     document.formatVersion = "PCB ASCII File (Altium ASCII export)";
 
-    std::map<int, std::string> netNames;
-    std::map<int, int> componentIndexById;  // ASCII "ID" -> position in document.components
-    std::map<std::string, int> recordCounts;
-    std::vector<Property> boardProps;
-    std::vector<const std::vector<Property>*> padRecords;
+    std::map<int, std::string>netNames;
+    std::map<int, int>componentIndexById;  // ASCII "ID" ->position in document.components
+    std::map<std::string, int>recordCounts;
+    std::vector<Property>boardProps;
+    std::vector<const std::vector<Property>*>padRecords;
 
     // ---- first pass: nets, components, board header ----
     for (const auto& props : records) {
@@ -209,7 +209,7 @@ void parseAsciiPcb(const std::vector<std::uint8_t>& bytes, Document& document) {
             Component& owner = document.components[static_cast<std::size_t>(ownerIt->second)];
             owner.pads.push_back(pad);
             ++owner.padCount;
-            if (pad.holeSize > 0.0) ++owner.throughHolePads;
+            if (pad.holeSize >0.0) ++owner.throughHolePads;
         }
         document.bounds.add(pad.x, pad.y);
         ++document.pcb.pads;
@@ -230,7 +230,7 @@ void parseAsciiPcb(const std::vector<std::uint8_t>& bytes, Document& document) {
             track.width = parseMil(valueOf(props, "WIDTH"));
             // A track without a usable layer is copper on the top layer; drawn as
             // "unknown layer" it would be grey on black, i.e. invisible.
-            track.layer = layer > 0 ? layer : 1;
+            track.layer = layer >0 ? layer : 1;
             const auto netIt = netNames.find(parseInt(valueOf(props, "NET"), -1));
             if (netIt != netNames.end()) track.net = netIt->second;
             document.bounds.add(track.x1, track.y1);
@@ -291,7 +291,7 @@ void parseAsciiPcb(const std::vector<std::uint8_t>& bytes, Document& document) {
             if (label.text.empty()) label.text = valueOf(props, "NAME");
             // ASCII exports usually only carry the font's "WIDESTRING" here, not the
             // actual characters, so an empty label is expected and simply not drawn.
-            if (label.height > 0.0) document.geometry.texts.push_back(label);
+            if (label.height >0.0) document.geometry.texts.push_back(label);
         } else if (text::equalsNoCase(type, "Fill")) {
             ++document.pcb.fills;
             FillFeature fill;
@@ -310,10 +310,10 @@ void parseAsciiPcb(const std::vector<std::uint8_t>& bytes, Document& document) {
     document.pcb.nets = static_cast<int>(document.nets.size());
 
     // Histogram for the "document structure" panel / --inspect.
-    std::vector<std::pair<std::string, int>> histogram(recordCounts.begin(), recordCounts.end());
+    std::vector<std::pair<std::string, int>>histogram(recordCounts.begin(), recordCounts.end());
     std::sort(histogram.begin(), histogram.end(),
               [](const std::pair<std::string, int>& a, const std::pair<std::string, int>& b) {
-                  if (a.second != b.second) return a.second > b.second;
+                  if (a.second != b.second) return a.second >b.second;
                   return a.first < b.first;
               });
     document.recordTypes = histogram;
@@ -328,9 +328,9 @@ void parseAsciiPcb(const std::vector<std::uint8_t>& bytes, Document& document) {
         "open the binary .PcbDoc or the .SchDoc to see them.");
 }
 
-std::vector<SchRecord> readAsciiSchRecords(const std::vector<std::uint8_t>& bytes) {
-    const std::vector<std::vector<Property>> records = readAsciiRecords(bytes);
-    std::vector<SchRecord> out;
+std::vector<SchRecord>readAsciiSchRecords(const std::vector<std::uint8_t>& bytes) {
+    const std::vector<std::vector<Property>>records = readAsciiRecords(bytes);
+    std::vector<SchRecord>out;
     out.reserve(records.size());
     int objectIndex = 0;
     for (std::size_t i = 0; i < records.size(); ++i) {
@@ -346,7 +346,7 @@ std::vector<SchRecord> readAsciiSchRecords(const std::vector<std::uint8_t>& byte
 }
 
 void parseAsciiSch(const std::vector<std::uint8_t>& bytes, Document& document) {
-    const std::vector<std::vector<Property>> records = readAsciiRecords(bytes);
+    const std::vector<std::vector<Property>>records = readAsciiRecords(bytes);
     document.container = Container::AsciiText;
     document.formatVersion = "Schematic ASCII File (Altium ASCII export)";
     if (records.empty()) {
@@ -354,8 +354,8 @@ void parseAsciiSch(const std::vector<std::uint8_t>& bytes, Document& document) {
         return;
     }
 
-    std::map<std::string, int> recordCounts;
-    std::vector<SchRecord> schRecords;
+    std::map<std::string, int>recordCounts;
+    std::vector<SchRecord>schRecords;
     schRecords.reserve(records.size());
 
     int objectIndex = 0;
@@ -381,10 +381,10 @@ void parseAsciiSch(const std::vector<std::uint8_t>& bytes, Document& document) {
     buildSchDocument(schRecords, document);
     document.container = Container::AsciiText;
 
-    std::vector<std::pair<std::string, int>> histogram(recordCounts.begin(), recordCounts.end());
+    std::vector<std::pair<std::string, int>>histogram(recordCounts.begin(), recordCounts.end());
     std::sort(histogram.begin(), histogram.end(),
               [](const std::pair<std::string, int>& a, const std::pair<std::string, int>& b) {
-                  if (a.second != b.second) return a.second > b.second;
+                  if (a.second != b.second) return a.second >b.second;
                   return a.first < b.first;
               });
     document.recordTypes = histogram;

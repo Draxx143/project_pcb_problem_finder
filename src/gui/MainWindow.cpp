@@ -71,6 +71,7 @@
 #include <utility>
 
 #include "BoardView.h"
+#include "SchematicView.h"
 #include "Icons.h"
 #include "core/LayerStyle.h"
 #include "core/AltiumParser.h"
@@ -136,8 +137,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     detailsView_->setHtml(
         "<div style='color:#9aa0a6;font-family:sans-serif;padding:18px'>"
-        "<h2 style='color:#00e5ff;margin-top:0'>🛡️ CircuitGuard Pro Ready</h2>"
-        "<p>Open an Altium <b>.PcbDoc</b> (PCB) or <b>.SchDoc</b> (schematic) file.</p>"
+        "<h2 style='color:#00e5ff;margin-top:0'>CircuitGuard Pro Ready</h2>"
+        "<p>Open an Altium <b>.PcbDoc</b>(PCB) or <b>.SchDoc</b>(schematic) file.</p>"
         "<p>Every component is listed with its designator, value/comment, footprint, "
         "manufacturer, part number, pins/pads and the complete raw parameter set.</p>"
         "</div>");
@@ -291,7 +292,7 @@ void MainWindow::createActions() {
         if (boardView_ != nullptr) {
             if (on && threeDAction_ != nullptr && threeDAction_->isChecked()) threeDAction_->setChecked(false);
             boardView_->setHeatmapMode(on);
-            statusBar()->showMessage(on ? tr("🔥 Copper Density & Thermal Heatmap enabled (press H to toggle)") : tr("Heatmap disabled"), 4000);
+            statusBar()->showMessage(on ? tr("Copper Density & Thermal Heatmap enabled (press H to toggle)") : tr("Heatmap disabled"), 4000);
         }
     });
 
@@ -322,7 +323,7 @@ void MainWindow::createActions() {
     aiAdvisorAction_->setToolTip(tr("Run Instant C++ IPC-2152 / Decoupling Advisor & Local DeepSeek AI Diagnostics  (F9)"));
     connect(aiAdvisorAction_, &QAction::triggered, this, &MainWindow::runAiAdvisor);
 
-    drcAction_ = new QAction(tr("🛡️ Run &DRC Check (IPC)"), this);
+    drcAction_ = new QAction(tr("Run &DRC Check (IPC)"), this);
     drcAction_->setShortcut(QKeySequence(Qt::Key_F8));
     drcAction_->setToolTip(tr("Run Industrial Design Rule Check (DRC) & DFM Sign-Off Report  (F8)"));
     connect(drcAction_, &QAction::triggered, this, &MainWindow::runDrcAnalysis);
@@ -496,6 +497,16 @@ void MainWindow::createMenus() {
     viewMenu->addSeparator();
     viewMenu->addAction(summaryAction_);
 
+    QMenu* toolsMenu = menuBar()->addMenu(tr("&Tools"));
+    if (drcAction_) toolsMenu->addAction(drcAction_);
+    if (aiAdvisorAction_) toolsMenu->addAction(aiAdvisorAction_);
+    if (heatmapAction_) toolsMenu->addAction(heatmapAction_);
+    toolsMenu->addSeparator();
+    if (fabAction_) toolsMenu->addAction(fabAction_);
+    if (pdfAction_) toolsMenu->addAction(pdfAction_);
+    if (schCheckAction_) toolsMenu->addAction(schCheckAction_);
+    if (calcAction_) toolsMenu->addAction(calcAction_);
+
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
     QAction* shortcutsAction = helpMenu->addAction(tr("&Keyboard shortcuts"));
     connect(shortcutsAction, &QAction::triggered, this, [this]() {
@@ -526,13 +537,13 @@ void MainWindow::createMenus() {
     connect(aboutAction, &QAction::triggered, this, [this]() {
         QMessageBox::about(this, tr("About PCB Viewer"),
                            tr("<h3>PCB Viewer %1</h3>"
-                              "<p>Reads Altium <b>.PcbDoc</b> and <b>.SchDoc</b> files directly — both the "
+                              "<p>Reads Altium <b>.PcbDoc</b>and <b>.SchDoc</b>files directly — both the "
                               "binary (OLE2) format and the ASCII export — and lists every component "
                               "with its full parameter set.</p>"
-                              "<p>The <b>Board</b> tab draws copper, pads, vias and silkscreen from the "
+                              "<p>The <b>Board</b>tab draws copper, pads, vias and silkscreen from the "
                               "same data, so no Altium installation is required.</p>"
-                              "<p><b>.PcbLib</b> footprint and <b>.SchLib</b> symbol libraries open as well: "
-                              "the <b>Library</b> tab lists every item and each footprint can be "
+                              "<p><b>.PcbLib</b>footprint and <b>.SchLib</b>symbol libraries open as well: "
+                              "the <b>Library</b>tab lists every item and each footprint can be "
                               "inspected on its own.</p>"
                               "<p>Coordinates are shown in millimetres (1 mil = 0.0254 mm).</p>")
                                .arg(QCoreApplication::applicationVersion()));
@@ -720,6 +731,11 @@ void MainWindow::createComponentTable() {
     tabs_->addTab(boardView_, tr("Board"));
     tabs_->setTabVisible(tabs_->indexOf(boardView_), false);
 
+    schematicView_ = new SchematicView(tabs_);
+    connect(schematicView_, &SchematicView::componentClicked, this, &MainWindow::selectComponentByIndex);
+    tabs_->addTab(schematicView_, tr("Schematic"));
+    tabs_->setTabVisible(tabs_->indexOf(schematicView_), false);
+
     // --- tab 4: revision comparison (only shown once two files were compared) --
     comparePage_ = new QWidget(tabs_);
     QVBoxLayout* compareLayout = new QVBoxLayout(comparePage_);
@@ -728,7 +744,7 @@ void MainWindow::createComponentTable() {
 
     QHBoxLayout* compareHeader = new QHBoxLayout();
     compareHint_ = new QLabel(
-        tr("Use <b>File → Compare with another document…</b> to diff this document against "
+        tr("Use <b>File → Compare with another document…</b>to diff this document against "
            "another revision."),
         comparePage_);
     compareHint_->setStyleSheet("color:#8a929e;");
@@ -828,7 +844,7 @@ void MainWindow::createComponentTable() {
             active_ = to;
         } else if (from < active_ && to >= active_) {
             --active_;
-        } else if (from > active_ && to <= active_) {
+        } else if (from >active_ && to <= active_) {
             ++active_;
         }
         updateDocumentTitle();
@@ -871,13 +887,13 @@ void MainWindow::createToolBar() {
     toolbar->addAction(fitAction_);
     toolbar->addAction(measureAction_);
     toolbar->addAction(threeDAction_);
-    if (heatmapAction_) toolbar->addAction(heatmapAction_);
-    if (drcAction_) toolbar->addAction(drcAction_);
-    if (aiAdvisorAction_) toolbar->addAction(aiAdvisorAction_);
-    if (fabAction_) toolbar->addAction(fabAction_);
-    if (pdfAction_) toolbar->addAction(pdfAction_);
-    if (calcAction_) toolbar->addAction(calcAction_);
-    if (schCheckAction_) toolbar->addAction(schCheckAction_);
+    
+    
+    
+    
+    
+    
+    
     toolbar->addSeparator();
     toolbar->addAction(exportAction_);
 
@@ -917,7 +933,7 @@ void MainWindow::populateLayers() {
     if (layersTree_ == nullptr) return;
     layersTree_->clear();
 
-    const std::set<int> hidden = pcbv::defaultHiddenLayers();
+    const std::set<int>hidden = pcbv::defaultHiddenLayers();
     for (const auto& usage : document_.layerUsage) {
         auto* item = new QTreeWidgetItem(layersTree_);
         item->setText(0, qs(usage.name));
@@ -930,8 +946,8 @@ void MainWindow::populateLayers() {
         // Colour swatch: the same colour the board view paints this layer with.
         QPixmap swatch(12, 12);
         const std::uint32_t rgb = pcbv::layerColor(usage.layer);
-        swatch.fill(QColor(static_cast<int>((rgb >> 16) & 0xFF),
-                           static_cast<int>((rgb >> 8) & 0xFF), static_cast<int>(rgb & 0xFF)));
+        swatch.fill(QColor(static_cast<int>((rgb >>16) & 0xFF),
+                           static_cast<int>((rgb >>8) & 0xFF), static_cast<int>(rgb & 0xFF)));
         item->setIcon(0, QIcon(swatch));
         item->setForeground(1, QColor(0x8a, 0x92, 0x9e));
         if (!usage.copper) item->setForeground(0, QColor(0xb0, 0xbe, 0xc5));
@@ -1089,7 +1105,7 @@ void MainWindow::printBoard() {
 
     QPrinter printer(QPrinter::HighResolution);
     printer.setDocName(qs(document_.fileName));
-    if (document_.bounds.width() > document_.bounds.height()) {
+    if (document_.bounds.width() >document_.bounds.height()) {
         printer.setPageOrientation(QPageLayout::Landscape);
     }
 
@@ -1123,7 +1139,7 @@ void MainWindow::printBoard() {
     QString scaleNote = tr("1:1");
     const double neededW = boardWidthMm * devicePerMm;
     const double neededH = boardHeightMm * devicePerMm;
-    if (neededW > availableW || neededH > availableH) {
+    if (neededW >availableW || neededH >availableH) {
         const double factor = std::min(availableW / neededW, availableH / neededH);
         mmScale = devicePerMm * factor;
         scaleNote = tr("scaled to %1% of real size").arg(factor * 100.0, 0, 'f', 0);
@@ -1199,7 +1215,7 @@ void MainWindow::showComparison(const pcbv::CompareResult& result) {
     lastComparisonHtml_ = qs(pcbv::compareToHtml(result));
     compareView_->setHtml(lastComparisonHtml_);
     if (compareHint_ != nullptr) {
-        compareHint_->setText(tr("<b>%1</b> → <b>%2</b> · %3")
+        compareHint_->setText(tr("<b>%1</b>→ <b>%2</b>· %3")
                                   .arg(qs(result.leftName).toHtmlEscaped(),
                                        qs(result.rightName).toHtmlEscaped(),
                                        result.identical()
@@ -1329,12 +1345,12 @@ void MainWindow::openDocument(const QString& path) {
     if (outcome.ok && outcome.document.type == pcbv::DocType::PcbDoc) {
         const pcbv::LibraryAttachment attachment =
             pcbv::attachLibraryFolder(outcome.document, path.toStdString());
-        if (attachment.parts > 0) {
+        if (attachment.parts >0) {
             log(tr("library: %1 part(s) matched in %2 file(s)")
                     .arg(attachment.parts)
                     .arg(attachment.files.size()));
             for (const std::string& file : attachment.files) {
-                log(tr("        %1").arg(qs(file)));
+                log(tr("       %1").arg(qs(file)));
             }
         }
     }
@@ -1361,7 +1377,7 @@ void MainWindow::openDocument(const QString& path) {
             box.exec();
         }
         log(tr("ERROR  %1 — %2").arg(info.fileName(), qs(outcome.error)));
-        if (!outcome.detected.empty()) log(tr("       detected: %1").arg(qs(outcome.detected)));
+        if (!outcome.detected.empty()) log(tr("      detected: %1").arg(qs(outcome.detected)));
         return;
     }
     // Already open? Bring that tab forward instead of loading the file twice.
@@ -1440,11 +1456,22 @@ void MainWindow::setDocument(const pcbv::Document& document) {
         boardView_->setDocument(document_);
         updateBoardOptions();
 
-        const bool hasBoard = !document_.geometry.empty();
+        const bool isSch = (document_.type == pcbv::DocType::SchDoc);
+        const bool hasBoard = !isSch && !document_.geometry.empty();
+        const bool hasSch   = isSch && (!document_.components.empty() || !document_.geometry.tracks.empty());
         const int boardTab = tabs_ != nullptr ? tabs_->indexOf(boardView_) : -1;
+        const int schTab   = (tabs_ != nullptr && schematicView_ != nullptr) ? tabs_->indexOf(schematicView_) : -1;
+        if (schematicView_ != nullptr) schematicView_->setDocument(document_);
         if (tabs_ != nullptr && boardTab >= 0) {
             tabs_->setTabVisible(boardTab, hasBoard);
-            tabs_->setCurrentIndex(hasBoard ? boardTab : 0);
+        }
+        if (tabs_ != nullptr && schTab >= 0) {
+            tabs_->setTabVisible(schTab, hasSch);
+        }
+        if (tabs_ != nullptr) {
+            if (hasBoard && boardTab >= 0) tabs_->setCurrentIndex(boardTab);
+            else if (hasSch && schTab >= 0) tabs_->setCurrentIndex(schTab);
+            else tabs_->setCurrentIndex(0);
         }
         // The connectivity table only makes sense when pads were parsed.
         if (tabs_ != nullptr && netlistPage_ != nullptr) {
@@ -1549,7 +1576,7 @@ void MainWindow::showSearchDialog() {
         int total = 0;
         for (std::size_t i = 0; i < slots_.size(); ++i) {
             const DocumentSlot& slot = slots_[i];
-            const std::vector<pcbv::SearchHit> hits = pcbv::searchDocument(
+            const std::vector<pcbv::SearchHit>hits = pcbv::searchDocument(
                 slot.document, slot.library, needle.toStdString(), 300);
             if (hits.empty()) continue;
             ++documentsWithHits;
@@ -1572,7 +1599,7 @@ void MainWindow::showSearchDialog() {
                                  .arg(total)
                                  .arg(documentsWithHits));
         }
-        if (results->topLevelItemCount() > 0) results->setCurrentItem(results->topLevelItem(0));
+        if (results->topLevelItemCount() >0) results->setCurrentItem(results->topLevelItem(0));
     };
 
     auto activate = [this, &dialog, results, targets]() {
@@ -1675,7 +1702,7 @@ void MainWindow::populateLibrary() {
                                      : QString();
             libraryTable_->setItem(row, 3, new QTableWidgetItem(size));
             libraryTable_->setItem(row, 4,
-                                   new NumericItem(footprint.height > 0.0 ? QString::number(footprint.height * 0.0254, 'f', 2) : QString(),
+                                   new NumericItem(footprint.height >0.0 ? QString::number(footprint.height * 0.0254, 'f', 2) : QString(),
                                                    static_cast<int>(footprint.height)));
             libraryTable_->setItem(row, 5, new QTableWidgetItem(qs(footprint.description)));
         }
@@ -1748,14 +1775,14 @@ QString MainWindow::libraryItemDetailsHtml(int index) const {
             row(tr("Size"), QString("%1 × %2 mm").arg(qs(pcbv::formatMm(footprint.bounds.width())),
                                                       qs(pcbv::formatMm(footprint.bounds.height()))));
         }
-        if (footprint.height > 0.0)
+        if (footprint.height >0.0)
             row(tr("Height"), QString("%1 mm").arg(qs(pcbv::formatMm(footprint.height))));
         row(tr("Pads"), QString("%1  (%2 tracks · %3 arcs · %4 vias)")
                             .arg(footprint.padCount)
                             .arg(footprint.trackCount)
                             .arg(footprint.arcCount)
                             .arg(footprint.viaCount));
-        if (footprint.regionCount > 0 || footprint.fillCount > 0) {
+        if (footprint.regionCount >0 || footprint.fillCount >0) {
             row(tr("Regions"), QString("%1 region(s) · %2 fill(s)")
                                    .arg(footprint.regionCount)
                                    .arg(footprint.fillCount));
@@ -1788,7 +1815,7 @@ QString MainWindow::libraryItemDetailsHtml(int index) const {
                         .arg(tr("Pad"), tr("Layer"), tr("Size (mm)"), tr("Position (mm)"));
             int shown = 0;
             for (const pcbv::Pad& pad : footprint.geometry.pads) {
-                if (++shown > 200) break;
+                if (++shown >200) break;
                 html += QString("<tr><td style='color:#e3e6ea;padding:1px 12px 1px 0'>%1</td>"
                                 "<td style='color:#c8cdd4;padding:1px 12px 1px 0'>%2</td>"
                                 "<td style='color:#c8cdd4;padding:1px 12px 1px 0'>%3 × %4</td>"
@@ -1798,7 +1825,7 @@ QString MainWindow::libraryItemDetailsHtml(int index) const {
                                  qs(pcbv::formatMm(pad.x)), qs(pcbv::formatMm(pad.y)));
             }
             html += "</table>";
-            if (static_cast<int>(footprint.geometry.pads.size()) > shown) {
+            if (static_cast<int>(footprint.geometry.pads.size()) >shown) {
                 html += QString("<div style='color:#8a929e;font-size:12px;margin-top:4px'>%1</div>")
                             .arg(tr("… %1 more pads; the board view shows all of them.")
                                      .arg(static_cast<int>(footprint.geometry.pads.size()) - shown));
@@ -1829,7 +1856,7 @@ QString MainWindow::libraryItemDetailsHtml(int index) const {
         }
         row(tr("Designator"), qs(symbol.designatorPrefix));
         row(tr("Pins"), QString::number(symbol.pins.size()));
-        if (symbol.partCount > 1) row(tr("Sub-parts"), QString::number(symbol.partCount));
+        if (symbol.partCount >1) row(tr("Sub-parts"), QString::number(symbol.partCount));
         html += "</table>";
 
         if (!symbol.pins.empty()) {
@@ -1967,7 +1994,7 @@ void MainWindow::rememberRecent(const QString& path) {
     const QString absolute = QFileInfo(path).absoluteFilePath();
     if (absolute.isEmpty() || !QFileInfo::exists(absolute)) return;
 
-    std::vector<std::string> stored;
+    std::vector<std::string>stored;
     stored.reserve(static_cast<std::size_t>(recentFiles_.size()));
     for (const QString& entry : recentFiles_) stored.push_back(entry.toStdString());
 
@@ -2011,7 +2038,7 @@ void MainWindow::rebuildRecentMenu() {
             QMetaObject::invokeMethod(this, [this, path]() { openDocument(path); },
                                       Qt::QueuedConnection);
         });
-        if (++number > 10) break;
+        if (++number >10) break;
     }
 
     if (recentFiles_.isEmpty()) {
@@ -2049,14 +2076,14 @@ void MainWindow::restoreSession() {
         if (path.isEmpty() || !QFileInfo::exists(path)) continue;
         const int before = static_cast<int>(slots_.size());
         openDocument(path);
-        if (static_cast<int>(slots_.size()) > before)
+        if (static_cast<int>(slots_.size()) >before)
             reopened.append(QFileInfo(path).absoluteFilePath());
     }
     restoringSession_ = false;
 
     if (reopened.isEmpty()) return;
     const int wantedSlot = reopened.indexOf(wanted);
-    if (wantedSlot > 0) activateDocument(wantedSlot);
+    if (wantedSlot >0) activateDocument(wantedSlot);
     log(tr("Reopened %1 document(s) from the last session.").arg(reopened.size()));
 }
 
@@ -2232,7 +2259,7 @@ void MainWindow::clearDocument() {
     if (detailsView_ != nullptr) {
         detailsView_->setHtml(
             tr("<div style='color:#9aa0a6;font-family:sans-serif;padding:18px'>"
-               "No document open.<br>Use <b>File → Open</b> (Ctrl+O) or drop a .PcbDoc / "
+               "No document open.<br>Use <b>File → Open</b>(Ctrl+O) or drop a .PcbDoc / "
                ".SchDoc here — every file gets its own tab.</div>"));
     }
     if (tabs_ != nullptr && comparePage_ != nullptr) {
@@ -2259,7 +2286,7 @@ void MainWindow::updateDocumentTitle() {
         return;
     }
     const DocumentSlot& slot = slots_[static_cast<std::size_t>(active_)];
-    setWindowTitle(slots_.size() > 1
+    setWindowTitle(slots_.size() >1
                        ? tr("%1 — PCB Viewer (%2 of %3)")
                              .arg(slot.title)
                              .arg(active_ + 1)
@@ -2290,7 +2317,7 @@ void MainWindow::updateActionStates() {
             if (action != nullptr) action->setEnabled(hasDocument);
         }
         if (globalFindAction_ != nullptr) globalFindAction_->setEnabled(hasDocument);
-        const bool many = slots_.size() > 1;
+        const bool many = slots_.size() >1;
         if (nextDocumentAction_ != nullptr) nextDocumentAction_->setEnabled(many);
         if (previousDocumentAction_ != nullptr) previousDocumentAction_->setEnabled(many);
         return;
@@ -2312,7 +2339,7 @@ void MainWindow::updateActionStates() {
 
     if (globalFindAction_ != nullptr) globalFindAction_->setEnabled(hasDocument);
 
-    const bool many = slots_.size() > 1;
+    const bool many = slots_.size() >1;
     if (nextDocumentAction_ != nullptr) nextDocumentAction_->setEnabled(many);
     if (previousDocumentAction_ != nullptr) previousDocumentAction_->setEnabled(many);
 }
@@ -2341,10 +2368,10 @@ void MainWindow::populateComponents() {
         table_->setItem(row, 3, new QTableWidgetItem(qs(c.manufacturer)));
         table_->setItem(row, 4, new QTableWidgetItem(qs(c.partNumber)));
 
-        const int pins = c.pinCount > 0 ? c.pinCount : -1;
-        const int pads = c.padCount > 0 ? c.padCount : -1;
-        table_->setItem(row, 5, new NumericItem(c.pinCount > 0 ? QString::number(c.pinCount) : QString(), pins));
-        table_->setItem(row, 6, new NumericItem(c.padCount > 0 ? QString::number(c.padCount) : QString(), pads));
+        const int pins = c.pinCount >0 ? c.pinCount : -1;
+        const int pads = c.padCount >0 ? c.padCount : -1;
+        table_->setItem(row, 5, new NumericItem(c.pinCount >0 ? QString::number(c.pinCount) : QString(), pins));
+        table_->setItem(row, 6, new NumericItem(c.padCount >0 ? QString::number(c.padCount) : QString(), pads));
         table_->setItem(row, 7, new QTableWidgetItem(qs(c.layer)));
         table_->setItem(row, 8, new QTableWidgetItem(qs(c.description)));
 
@@ -2367,7 +2394,7 @@ void MainWindow::populateComponents() {
 
 void MainWindow::populateBom() {
     if (bomTable_ == nullptr) return;
-    const std::vector<pcbv::BomEntry> entries = pcbv::buildBom(document_);
+    const std::vector<pcbv::BomEntry>entries = pcbv::buildBom(document_);
 
     bomTable_->setSortingEnabled(false);
     bomTable_->setRowCount(0);
@@ -2429,11 +2456,11 @@ void MainWindow::populateNetlist() {
     if (netlistTree_ == nullptr) return;
     netlistTree_->clear();
 
-    const std::vector<pcbv::NetConnection> netlist = pcbv::buildNetlist(document_);
+    const std::vector<pcbv::NetConnection>netlist = pcbv::buildNetlist(document_);
 
     // Copper statistics per net come from the board index, the pad list from the netlist,
     // so the Netlist tab carries everything the old Nets panel used to show.
-    std::map<std::string, const pcbv::NetSummary*> summaries;
+    std::map<std::string, const pcbv::NetSummary*>summaries;
     for (const auto& summary : document_.netSummaries) summaries[summary.name] = &summary;
 
     std::size_t pads = 0;
@@ -2494,8 +2521,8 @@ void MainWindow::populateNetlist() {
             netlistInfo_->setText(tr("no pads"));
         } else {
             QString info = tr("%1 nets · %2 pads").arg(named).arg(pads);
-            if (dangling > 0) info += tr(" · %1 single-pad").arg(dangling);
-            if (unconnected > 0) info += tr(" · %1 unconnected").arg(unconnected);
+            if (dangling >0) info += tr("· %1 single-pad").arg(dangling);
+            if (unconnected >0) info += tr("· %1 unconnected").arg(unconnected);
             netlistInfo_->setText(info);
         }
     }
@@ -2522,13 +2549,13 @@ void MainWindow::applyNetlistFilter(const QString& text) {
             if (match) ++visibleChildren;
         }
         netItem->setHidden(visibleChildren == 0 && !netMatches);
-        if (!needle.isEmpty()) netItem->setExpanded(visibleChildren > 0);
+        if (!needle.isEmpty()) netItem->setExpanded(visibleChildren >0);
     }
 }
 
 void MainWindow::selectNetlistItem() {
     if (netlistTree_ == nullptr) return;
-    const QList<QTreeWidgetItem*> items = netlistTree_->selectedItems();
+    const QList<QTreeWidgetItem*>items = netlistTree_->selectedItems();
     if (items.isEmpty()) return;
     QTreeWidgetItem* item = items.first();
 
@@ -2675,7 +2702,7 @@ QString MainWindow::netDetailsHtml(const pcbv::NetSummary& net) const {
                     .arg(static_cast<int>(net.connections.size()));
         html += "<div style='font-size:12.5px;color:#cfd8dc;line-height:1.7'>";
         for (std::size_t i = 0; i < net.connections.size(); ++i) {
-            if (i > 0) html += "&nbsp;·&nbsp;";
+            if (i >0) html += "&nbsp;·&nbsp;";
             html += qs(net.connections[i]).toHtmlEscaped();
         }
         html += "</div>";
@@ -2760,12 +2787,12 @@ QString MainWindow::componentDetailsHtml(const pcbv::Component& c) const {
                                      qs(pcbv::formatMil(c.x)), qs(pcbv::formatMil(c.y))));
     }
     if (c.rotation != 0.0) row(tr("Rotation"), QString("%1°").arg(c.rotation, 0, 'f', 2));
-    if (c.height > 0.0) row(tr("Height"), QString("%1 mm").arg(qs(pcbv::formatMm(c.height))));
-    if (c.pinCount > 0) row(tr("Pins"), QString::number(c.pinCount));
-    if (c.padCount > 0) {
+    if (c.height >0.0) row(tr("Height"), QString("%1 mm").arg(qs(pcbv::formatMm(c.height))));
+    if (c.pinCount >0) row(tr("Pins"), QString::number(c.pinCount));
+    if (c.padCount >0) {
         row(tr("Pads"), QString("%1 (%2 through-hole)").arg(c.padCount).arg(c.throughHolePads));
     }
-    if (c.partCount > 1) row(tr("Sub-parts"), QString::number(c.partCount));
+    if (c.partCount >1) row(tr("Sub-parts"), QString::number(c.partCount));
     row(tr("Source library"), qs(c.sourceLibrary));
     row(tr("Footprint library"), qs(c.sourceFootprintLibrary));
     row(tr("Unique ID"), qs(c.uniqueId));
@@ -2804,7 +2831,7 @@ QString MainWindow::componentDetailsHtml(const pcbv::Component& c) const {
                         .arg(qs(pad.designator).toHtmlEscaped(), qs(pad.layerName),
                              qs(pad.net).toHtmlEscaped(), qs(pcbv::formatMm(pad.width)),
                              qs(pcbv::formatMm(pad.height)),
-                             pad.holeSize > 0 ? qs(pcbv::formatMm(pad.holeSize)) : QString("—"));
+                             pad.holeSize >0 ? qs(pcbv::formatMm(pad.holeSize)) : QString("—"));
         }
         html += "</table>";
     }
@@ -3032,7 +3059,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
 }
 
 void MainWindow::dropEvent(QDropEvent* event) {
-    const QList<QUrl> urls = event->mimeData()->urls();
+    const QList<QUrl>urls = event->mimeData()->urls();
     if (urls.isEmpty()) return;
     for (const QUrl& url : urls) {
         if (url.isLocalFile()) openDocument(url.toLocalFile());
@@ -3059,7 +3086,7 @@ void MainWindow::runDrcAnalysis() {
     pcbv::DrcReport rep = pcbv::runDrcChecks(document_, rules);
     std::string html = pcbv::generateCommercialDrcReportHtml(document_, rep);
 
-    log(QStringLiteral("🛡️ [DRC Engine] %1 — Health Score: %2% | Critical: %3 | Warnings: %4 | Info: %5 (Clearance >= %6 mil, Track >= %7 mil)")
+    log(QStringLiteral(" [DRC Engine] %1 — Health Score: %2% | Critical: %3 | Warnings: %4 | Info: %5 (Clearance >= %6 mil, Track >= %7 mil)")
             .arg(qs(document_.fileName))
             .arg(rep.healthScore, 0, 'f', 0)
             .arg(rep.criticalCount)
@@ -3092,7 +3119,7 @@ void MainWindow::runDrcAnalysis() {
 
     connect(rulesBtn, &QPushButton::clicked, &dlg, [this, &dlg, &rules, &rep, &html, browser]() {
         QDialog rDlg(&dlg);
-        rDlg.setWindowTitle(tr("⚙️ CircuitGuard Pro — Industrial DRC Rule Configuration"));
+        rDlg.setWindowTitle(tr("CircuitGuard Pro — Industrial DRC Rule Configuration"));
         rDlg.setMinimumWidth(440);
         auto* vLayout = new QVBoxLayout(&rDlg);
 
@@ -3172,7 +3199,7 @@ void MainWindow::runDrcAnalysis() {
             html = pcbv::generateCommercialDrcReportHtml(document_, rep);
             browser->setHtml(qs(html));
 
-            log(QStringLiteral("⚙️ [DRC Rules Updated] Re-ran check: Score %1% | Critical: %2 | Warnings: %3")
+            log(QStringLiteral(" [DRC Rules Updated] Re-ran check: Score %1% | Critical: %2 | Warnings: %3")
                     .arg(rep.healthScore, 0, 'f', 0)
                     .arg(rep.criticalCount)
                     .arg(rep.warningCount));
@@ -3208,7 +3235,7 @@ void MainWindow::runDrcAnalysis() {
             QFile f(out);
             if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
                 f.write(QByteArray::fromStdString(html));
-                log(QStringLiteral("💾 Saved commercial DRC report to ") + out);
+                log(QStringLiteral(" Saved commercial DRC report to ") + out);
             }
         }
     });
@@ -3223,14 +3250,14 @@ void MainWindow::runAiAdvisor() {
     }
 
     // 1. Instant C++ Deterministic Engineering Analysis (IPC-2152 & Decoupling Check)
-    std::vector<const pcbv::Component*> ics, caps;
+    std::vector<const pcbv::Component*>ics, caps;
     for (const auto& c : document_.components) {
         if (!c.designator.empty() && (c.designator[0] == 'U' || c.designator[0] == 'I')) ics.push_back(&c);
         if (!c.designator.empty() && c.designator[0] == 'C') caps.push_back(&c);
     }
 
     QString report = QStringLiteral("<div style='background:#0d1117;color:#e6edf3;font-family:sans-serif;padding:20px;'>");
-    report += QStringLiteral("<h2 style='color:#00e5ff;margin-top:0;'>🧠 CircuitGuard Pro — C++ IPC-2152 & AI Engineering Advisor</h2>");
+    report += QStringLiteral("<h2 style='color:#00e5ff;margin-top:0;'>CircuitGuard Pro — C++ IPC-2152 & AI Engineering Advisor</h2>");
     report += QStringLiteral("<p style='color:#8b949e;'>Instant deterministic analysis + Local Ollama LLM integration</p><hr style='border-color:#30363d;'>");
 
     report += QStringLiteral("<h3 style='color:#ffd740;'>1. IC Decoupling Capacitor Proximity Check</h3><ul>");
@@ -3242,12 +3269,12 @@ void MainWindow::runAiAdvisor() {
             double d = std::hypot(ic->x - cap->x, ic->y - cap->y);
             if (d < bestDistMil) { bestDistMil = d; nearestCap = cap->designator; }
         }
-        if (bestDistMil > 250.0) {
+        if (bestDistMil >250.0) {
             decoupleWarnings++;
-            report += QStringLiteral("<li style='color:#ff5252;'><b>%1 (%2)</b>: Nearest capacitor is <b>%3</b> at <b>%4 mil</b> (>250 mil limit — high EMI/Power ripple risk!).</li>")
+            report += QStringLiteral("<li style='color:#ff5252;'><b>%1 (%2)</b>: Nearest capacitor is <b>%3</b>at <b>%4 mil</b>(>250 mil limit — high EMI/Power ripple risk!).</li>")
                 .arg(qs(ic->designator), qs(ic->comment), qs(nearestCap)).arg(bestDistMil, 0, 'f', 1);
         } else {
-            report += QStringLiteral("<li style='color:#00e676;'><b>%1</b>: Well-decoupled by <b>%2</b> (%3 mil distance).</li>")
+            report += QStringLiteral("<li style='color:#00e676;'><b>%1</b>: Well-decoupled by <b>%2</b>(%3 mil distance).</li>")
                 .arg(qs(ic->designator), qs(nearestCap)).arg(bestDistMil, 0, 'f', 1);
         }
     }
@@ -3257,10 +3284,10 @@ void MainWindow::runAiAdvisor() {
     // 2. IPC-2152 Current Capacity Estimation (1 oz copper = 1.378 mil thickness)
     double minTrack = 1e9, maxTrack = 0.0;
     for (const auto& t : document_.geometry.tracks) {
-        if (t.width > 0.0 && t.width < minTrack) minTrack = t.width;
-        if (t.width > maxTrack) maxTrack = t.width;
+        if (t.width >0.0 && t.width < minTrack) minTrack = t.width;
+        if (t.width >maxTrack) maxTrack = t.width;
     }
-    if (minTrack > 1e8) minTrack = 6.0;
+    if (minTrack >1e8) minTrack = 6.0;
     auto ipcCurrentAmp = [](double widthMil) {
         double areaSqMil = widthMil * 1.378; // 1 oz copper
         return 0.048 * std::pow(10.0, 0.44) * std::pow(areaSqMil, 0.725); // ΔT = 10°C external layer
@@ -3274,7 +3301,7 @@ void MainWindow::runAiAdvisor() {
     report += QStringLiteral("</ul></div>");
 
     QDialog dlg(this);
-    dlg.setWindowTitle(tr("🧠 CircuitGuard Pro — C++ IPC Advisor & DeepSeek AI"));
+    dlg.setWindowTitle(tr("CircuitGuard Pro — C++ IPC Advisor & DeepSeek AI"));
     dlg.resize(960, 680);
     auto* vlay = new QVBoxLayout(&dlg);
 
@@ -3308,13 +3335,13 @@ void MainWindow::runAiAdvisor() {
             .arg(drc.healthScore, 0, 'f', 0).arg(drc.criticalCount).arg(drc.warningCount)
             .arg(decoupleWarnings).arg(minTrack, 0, 'f', 1).arg(maxTrack, 0, 'f', 1);
 
-        browser->append(QStringLiteral("<hr><h3 style='color:#00e676;'>🤖 Querying Local Model: %1 (Zero-Bloat Prompt)…</h3>").arg(modelName));
+        browser->append(QStringLiteral("<hr><h3 style='color:#00e676;'>Querying Local Model: %1 (Zero-Bloat Prompt)…</h3>").arg(modelName));
         QApplication::processEvents();
 
         QProcess proc;
         proc.start(QStringLiteral("ollama"), QStringList() << QStringLiteral("run") << modelName << prompt);
         if (!proc.waitForFinished(45000)) {
-            browser->append(QStringLiteral("<p style='color:#ff5252;'>⚠️ Ollama timed out or model <b>%1</b> is not pulled yet. Run in terminal: <code>ollama pull %1</code></p>").arg(modelName));
+            browser->append(QStringLiteral("<p style='color:#ff5252;'>Ollama timed out or model <b>%1</b>is not pulled yet. Run in terminal: <code>ollama pull %1</code></p>").arg(modelName));
             return;
         }
         QString aiOut = QString::fromUtf8(proc.readAllStandardOutput()).trimmed();
@@ -3355,13 +3382,13 @@ void MainWindow::exportPdfReport() {
     painter.drawText(300, 1200, QStringLiteral("Board Dimensions: ") + QString::number(document_.bounds.width()) + QStringLiteral(" x ") + QString::number(document_.bounds.height()) + QStringLiteral(" mil"));
 
     painter.end();
-    log(QStringLiteral("📄 [PDF Export] Saved report to ") + path);
+    log(QStringLiteral(" [PDF Export] Saved report to ") + path);
     QMessageBox::information(this, tr("PDF Exported Successfully"), tr("Report saved to:\n%1").arg(path));
 }
 
 void MainWindow::openImpedanceCalculator() {
     QDialog dlg(this);
-    dlg.setWindowTitle(tr("📐 CircuitGuard Pro — Impedance & Trace Calculator"));
+    dlg.setWindowTitle(tr("CircuitGuard Pro — Impedance & Trace Calculator"));
     dlg.setMinimumWidth(480);
     auto* form = new QFormLayout(&dlg);
 
@@ -3374,7 +3401,7 @@ void MainWindow::openImpedanceCalculator() {
     auto* subHSpin = new QDoubleSpinBox(&dlg);
     subHSpin->setRange(1.0, 100.0); subHSpin->setValue(10.0); subHSpin->setSuffix(QStringLiteral(" mil (dielectric height)"));
 
-    auto* resultLabel = new QLabel(QStringLiteral("<b>Calculated Microstrip Z0:</b> ~52.4 Ω<br><b>Max IPC Current (ΔT 10°C):</b> ~1.85 A"), &dlg);
+    auto* resultLabel = new QLabel(QStringLiteral("<b>Calculated Microstrip Z0:</b>~52.4 Ω<br><b>Max IPC Current (ΔT 10°C):</b>~1.85 A"), &dlg);
     resultLabel->setStyleSheet(QStringLiteral("background:#161b22; color:#00e5ff; padding:12px; border-radius:6px; font-size:14px;"));
 
     auto calcFunc = [=]() {
@@ -3385,7 +3412,7 @@ void MainWindow::openImpedanceCalculator() {
         if (z0 < 10.0) z0 = 10.0;
         double area = w * 1.378;
         double amp = 0.048 * std::pow(10.0, 0.44) * std::pow(area, 0.725);
-        resultLabel->setText(QStringLiteral("<b>Calculated Microstrip Z0:</b> ~%1 Ω<br><b>Max IPC Current (ΔT 10°C):</b> ~%2 A")
+        resultLabel->setText(QStringLiteral("<b>Calculated Microstrip Z0:</b>~%1 Ω<br><b>Max IPC Current (ΔT 10°C):</b>~%2 A")
             .arg(z0, 0, 'f', 1).arg(amp, 0, 'f', 2));
     };
 

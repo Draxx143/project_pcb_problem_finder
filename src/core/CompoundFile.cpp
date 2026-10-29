@@ -45,24 +45,24 @@ std::string utf16ToUtf8(const std::uint8_t* bytes, std::size_t lenBytes) {
         if (cp < 0x80) {
             out += static_cast<char>(cp);
         } else if (cp < 0x800) {
-            out += static_cast<char>(0xC0 | (cp >> 6));
+            out += static_cast<char>(0xC0 | (cp >>6));
             out += static_cast<char>(0x80 | (cp & 0x3F));
         } else if (cp < 0x10000) {
-            out += static_cast<char>(0xE0 | (cp >> 12));
-            out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+            out += static_cast<char>(0xE0 | (cp >>12));
+            out += static_cast<char>(0x80 | ((cp >>6) & 0x3F));
             out += static_cast<char>(0x80 | (cp & 0x3F));
         } else {
-            out += static_cast<char>(0xF0 | (cp >> 18));
-            out += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
-            out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+            out += static_cast<char>(0xF0 | (cp >>18));
+            out += static_cast<char>(0x80 | ((cp >>12) & 0x3F));
+            out += static_cast<char>(0x80 | ((cp >>6) & 0x3F));
             out += static_cast<char>(0x80 | (cp & 0x3F));
         }
     }
     return out;
 }
 
-std::vector<std::string> splitPath(const std::string& path) {
-    std::vector<std::string> parts;
+std::vector<std::string>splitPath(const std::string& path) {
+    std::vector<std::string>parts;
     std::string current;
     for (char c : path) {
         if (c == '/' || c == '\\') {
@@ -99,7 +99,7 @@ bool CompoundFile::openFromFile(const std::string& path, std::string& error) {
         error = "file is empty: " + path;
         return false;
     }
-    std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
+    std::vector<std::uint8_t>bytes(static_cast<std::size_t>(size));
     in.read(reinterpret_cast<char*>(bytes.data()), size);
     if (!in && !in.eof()) {
         error = "failed to read file: " + path;
@@ -154,7 +154,7 @@ bool CompoundFile::parse(std::string& error) {
     const std::uint32_t numDifat = readU32(data_.data() + 0x48);
 
     // ---- DIFAT (list of FAT sector numbers) ----
-    std::vector<std::uint32_t> difat;
+    std::vector<std::uint32_t>difat;
     difat.reserve(109 + static_cast<std::size_t>(numDifat) * (sectorSize_ / 4));
     for (int i = 0; i < 109; ++i) {
         difat.push_back(readU32(data_.data() + 0x4C + i * 4));
@@ -164,7 +164,7 @@ bool CompoundFile::parse(std::string& error) {
     std::uint32_t guard = 0;
     for (std::uint32_t i = 0; i < numDifat && difatSector < kMaxRegSector; ++i) {
         const std::uint64_t off = sectorOffset(difatSector);
-        if (off + sectorSize_ > data_.size() || ++guard > 1000000) break;
+        if (off + sectorSize_ >data_.size() || ++guard >1000000) break;
         for (std::uint32_t j = 0; j + 1 < perDifat; ++j) {
             difat.push_back(readU32(data_.data() + off + j * 4));
         }
@@ -177,7 +177,7 @@ bool CompoundFile::parse(std::string& error) {
         const std::uint32_t sec = difat[i];
         if (sec >= kMaxRegSector) continue;
         const std::uint64_t off = sectorOffset(sec);
-        if (off + sectorSize_ > data_.size()) continue;
+        if (off + sectorSize_ >data_.size()) continue;
         for (std::uint32_t j = 0; j < entriesPerSector; ++j) {
             fat_.push_back(readU32(data_.data() + off + j * 4));
         }
@@ -193,17 +193,17 @@ bool CompoundFile::parse(std::string& error) {
     guard = 0;
     for (std::uint32_t i = 0; i < numMiniFat && miniSector < kMaxRegSector; ++i) {
         const std::uint64_t off = sectorOffset(miniSector);
-        if (off + sectorSize_ > data_.size()) break;
+        if (off + sectorSize_ >data_.size()) break;
         for (std::uint32_t j = 0; j < entriesPerSector; ++j) {
             miniFat_.push_back(readU32(data_.data() + off + j * 4));
         }
         if (miniSector >= fat_.size()) break;
         miniSector = fat_[miniSector];
-        if (++guard > 1000000) break;
+        if (++guard >1000000) break;
     }
 
     // ---- Directory ----
-    const std::vector<std::uint8_t> dirData = readChain(dirStart, 0, false);
+    const std::vector<std::uint8_t>dirData = readChain(dirStart, 0, false);
     if (dirData.empty()) {
         error = "corrupt CFB: empty directory";
         data_.clear();
@@ -215,7 +215,7 @@ bool CompoundFile::parse(std::string& error) {
         const std::uint8_t* e = dirData.data() + i * 128;
         RawEntry entry;
         std::uint16_t nameLen = readU16(e + 0x40);
-        if (nameLen > 64) nameLen = 64;
+        if (nameLen >64) nameLen = 64;
         if (nameLen >= 2) {
             entry.name = utf16ToUtf8(e, static_cast<std::size_t>(nameLen - 2));
         }
@@ -234,7 +234,7 @@ bool CompoundFile::parse(std::string& error) {
     }
 
     // ---- Mini stream (owned by the root entry) ----
-    if (entries_[0].size > 0 && entries_[0].startSector < kMaxRegSector) {
+    if (entries_[0].size >0 && entries_[0].startSector < kMaxRegSector) {
         miniStream_ = readChain(entries_[0].startSector, entries_[0].size, false);
     }
 
@@ -243,7 +243,7 @@ bool CompoundFile::parse(std::string& error) {
     tree_.name = entries_[0].name.empty() ? "Root Entry" : entries_[0].name;
     tree_.isStorage = true;
     tree_.path.clear();
-    std::vector<std::uint32_t> visited;
+    std::vector<std::uint32_t>visited;
     std::uint32_t firstChild = entries_[0].child;
     if (firstChild < entries_.size()) {
         buildTree(tree_, firstChild, "", visited, 0);
@@ -254,8 +254,8 @@ bool CompoundFile::parse(std::string& error) {
 void CompoundFile::buildTree(FileEntry& node, std::uint32_t entryIndex, std::string path,
                              std::vector<std::uint32_t>& visited, int depth) const {
     // The directory is a red-black tree: walk left/right siblings plus each sibling's child.
-    if (depth > 64) return;
-    std::vector<std::uint32_t> stack;
+    if (depth >64) return;
+    std::vector<std::uint32_t>stack;
     stack.push_back(entryIndex);
     while (!stack.empty()) {
         const std::uint32_t idx = stack.back();
@@ -287,9 +287,9 @@ void CompoundFile::buildTree(FileEntry& node, std::uint32_t entryIndex, std::str
     }
 }
 
-std::vector<std::uint8_t> CompoundFile::readChain(std::uint32_t start, std::uint64_t size,
+std::vector<std::uint8_t>CompoundFile::readChain(std::uint32_t start, std::uint64_t size,
                                                   bool mini) const {
-    std::vector<std::uint8_t> out;
+    std::vector<std::uint8_t>out;
     if (start >= kMaxRegSector) return out;
 
     const std::uint32_t unit = mini ? miniSectorSize_ : sectorSize_;
@@ -306,14 +306,14 @@ std::vector<std::uint8_t> CompoundFile::readChain(std::uint32_t start, std::uint
         if (off >= source.size()) break;
         std::size_t available = static_cast<std::size_t>(
             std::min<std::uint64_t>(unit, source.size() - off));
-        if (size > 0) {
+        if (size >0) {
             const std::size_t produced = out.size();
             if (produced >= size) break;
             available = std::min<std::size_t>(available, static_cast<std::size_t>(size - produced));
         }
         out.insert(out.end(), source.begin() + static_cast<std::ptrdiff_t>(off),
                    source.begin() + static_cast<std::ptrdiff_t>(off + available));
-        if (size > 0 && out.size() >= size) break;
+        if (size >0 && out.size() >= size) break;
         if (sector >= table.size()) break;
         const std::uint32_t next = table[sector];
         if (next == sector) break;                 // self reference: corrupt
@@ -321,12 +321,12 @@ std::vector<std::uint8_t> CompoundFile::readChain(std::uint32_t start, std::uint
         if (next >= kMaxRegSector) break;          // ENDOFCHAIN / FATSECT / DIFSECT
         sector = next;
     }
-    if (size > 0 && out.size() > size) out.resize(static_cast<std::size_t>(size));
+    if (size >0 && out.size() >size) out.resize(static_cast<std::size_t>(size));
     return out;
 }
 
-std::vector<std::uint8_t> CompoundFile::stream(const std::string& path) const {
-    const std::vector<std::string> parts = splitPath(path);
+std::vector<std::uint8_t>CompoundFile::stream(const std::string& path) const {
+    const std::vector<std::string>parts = splitPath(path);
     const FileEntry* node = &tree_;
     for (const std::string& part : parts) {
         node = node->find(part);
@@ -338,19 +338,19 @@ std::vector<std::uint8_t> CompoundFile::stream(const std::string& path) const {
     if (raw == nullptr) return {};
 
     const bool useMini = raw->size < miniCutoff_ && !miniStream_.empty();
-    std::vector<std::uint8_t> data = readChain(raw->startSector, raw->size, useMini);
+    std::vector<std::uint8_t>data = readChain(raw->startSector, raw->size, useMini);
     // Defensive fallback for containers written by tools that ignore the mini-stream cutoff.
     if (data.empty() && !useMini) data = readChain(raw->startSector, raw->size, false);
     return data;
 }
 
 std::string CompoundFile::streamText(const std::string& path) const {
-    const std::vector<std::uint8_t> bytes = stream(path);
+    const std::vector<std::uint8_t>bytes = stream(path);
     return std::string(bytes.begin(), bytes.end());
 }
 
 bool CompoundFile::exists(const std::string& path) const {
-    const std::vector<std::string> parts = splitPath(path);
+    const std::vector<std::string>parts = splitPath(path);
     const FileEntry* node = &tree_;
     for (const std::string& part : parts) {
         node = node->find(part);
@@ -369,8 +369,8 @@ void collectStreams(const FileEntry& node, std::vector<std::string>& out) {
 }
 } // namespace
 
-std::vector<std::string> CompoundFile::allStreamPaths() const {
-    std::vector<std::string> out;
+std::vector<std::string>CompoundFile::allStreamPaths() const {
+    std::vector<std::string>out;
     collectStreams(tree_, out);
     std::sort(out.begin(), out.end());
     return out;

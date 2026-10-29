@@ -23,7 +23,7 @@ std::string toHtml(const Document& doc);
 /// Which layers and extras the board drawing includes.
 struct BoardRenderOptions {
     /// Altium layer ids that are switched off in the Layers panel.
-    std::set<int> hiddenLayers;
+    std::set<int>hiddenLayers;
     bool silk = true;        ///< silkscreen text and silk tracks (also honoured per layer)
     bool pads = true;
     bool designators = true;
@@ -33,7 +33,7 @@ struct BoardRenderOptions {
 
 /// Layers that are hidden the first time a board is opened: manufacturing-only
 /// layers (paste, solder mask, mechanical, keep-out, drill) would only add noise.
-std::set<int> defaultHiddenLayers();
+std::set<int>defaultHiddenLayers();
 
 /// Standalone SVG drawing of the PCB geometry (empty string for schematics).
 std::string toSvg(const Document& doc, const BoardRenderOptions& options = BoardRenderOptions());

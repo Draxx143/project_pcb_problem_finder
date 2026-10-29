@@ -28,7 +28,7 @@ std::string searchKindName(SearchHit::Kind kind);
 /// Searches one document (components, nets, layers) and, if it is a library, its items.
 /// Matching is case-insensitive on the name, the detail and the raw parameters.
 /// At most `maxHits` hits are returned (a huge board must not stall the dialog).
-std::vector<SearchHit> searchDocument(const Document& document, const Library& library,
+std::vector<SearchHit>searchDocument(const Document& document, const Library& library,
                                       const std::string& needle, std::size_t maxHits = 300);
 
 /// Number of places a document was searched in (used for the "nothing found" hint).

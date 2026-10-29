@@ -25,28 +25,28 @@ std::string connectionLabel(const Pad& pad, const Document& document) {
 }
 
 struct LayerCounter {
-    std::map<int, int> count;
+    std::map<int, int>count;
 
     void add(int layer) {
-        if (layer > 0) ++count[layer];
+        if (layer >0) ++count[layer];
     }
 
     void addMany(int layer, int amount) {
-        if (layer > 0) count[layer] += amount;
+        if (layer >0) count[layer] += amount;
     }
 };
 
 } // namespace
 
 void finalizeBoard(Document& document) {
-    std::map<std::string, std::size_t> byName;
+    std::map<std::string, std::size_t>byName;
     for (std::size_t i = 0; i < document.nets.size(); ++i) {
         byName[document.nets[i].name] = i;
     }
 
     // --- nets ---------------------------------------------------------------
-    std::map<std::string, NetSummary> summaries;
-    auto summaryFor = [&](const std::string& name, int index) -> NetSummary& {
+    std::map<std::string, NetSummary>summaries;
+    auto summaryFor = [&](const std::string& name, int index) ->NetSummary& {
         auto it = summaries.find(name);
         if (it != summaries.end()) return it->second;
         NetSummary summary;
@@ -112,7 +112,7 @@ void finalizeBoard(Document& document) {
     for (const auto& region : document.geometry.regions) counter.add(region.layer);
     for (const auto& pad : document.geometry.pads) {
         // SMD pads live on their own layer, through-hole pads span every copper layer.
-        if (pad.holeSize > 0.0) {
+        if (pad.holeSize >0.0) {
             counter.addMany(1, 1);
             counter.addMany(32, 1);
         } else {
@@ -154,7 +154,7 @@ std::string copperStackup(const Document& document) {
     }
     if (signal == 0) return std::string();
     std::string text = std::to_string(signal) + (signal == 1 ? " copper layer" : " copper layers");
-    if (planes > 0) text += " + " + std::to_string(planes) + " internal plane(s)";
+    if (planes >0) text += " + " + std::to_string(planes) + " internal plane(s)";
     return text;
 }
 

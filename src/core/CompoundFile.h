@@ -16,7 +16,7 @@ struct FileEntry {
     bool isStorage = false;
     std::uint64_t size = 0;             // stream length in bytes (0 for storages)
     std::uint32_t dirIndex = 0xFFFFFFFF; // index in the OLE directory table
-    std::vector<FileEntry> children;    // sub-nodes (storages only)
+    std::vector<FileEntry>children;    // sub-nodes (storages only)
 
     /// Returns the child with the given name (case-insensitive) or nullptr.
     const FileEntry* find(const std::string& childName) const;
@@ -43,13 +43,13 @@ public:
     bool exists(const std::string& path) const;
 
     /// Reads a stream. Returns an empty buffer if the stream is missing or empty.
-    std::vector<std::uint8_t> stream(const std::string& path) const;
+    std::vector<std::uint8_t>stream(const std::string& path) const;
 
     /// Convenience: stream contents as std::string (raw bytes, no transcoding).
     std::string streamText(const std::string& path) const;
 
     /// All stream paths, slash separated, sorted.
-    std::vector<std::string> allStreamPaths() const;
+    std::vector<std::string>allStreamPaths() const;
 
 private:
     struct RawEntry {
@@ -65,17 +65,17 @@ private:
     bool parse(std::string& error);
     const RawEntry* rawEntryAt(std::uint32_t index) const;
     std::uint64_t sectorOffset(std::uint32_t sector) const;
-    std::vector<std::uint8_t> readChain(std::uint32_t start, std::uint64_t size,
+    std::vector<std::uint8_t>readChain(std::uint32_t start, std::uint64_t size,
                                         bool mini) const;
 
     void buildTree(FileEntry& node, std::uint32_t entryIndex, std::string path,
                    std::vector<std::uint32_t>& visited, int depth) const;
 
-    std::vector<std::uint8_t> data_;
-    std::vector<RawEntry> entries_;
-    std::vector<std::uint32_t> fat_;
-    std::vector<std::uint32_t> miniFat_;
-    std::vector<std::uint8_t> miniStream_;
+    std::vector<std::uint8_t>data_;
+    std::vector<RawEntry>entries_;
+    std::vector<std::uint32_t>fat_;
+    std::vector<std::uint32_t>miniFat_;
+    std::vector<std::uint8_t>miniStream_;
     std::uint32_t sectorSize_ = 512;
     std::uint32_t miniSectorSize_ = 64;
     std::uint32_t miniCutoff_ = 4096;

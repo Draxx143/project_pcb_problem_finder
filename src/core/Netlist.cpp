@@ -24,7 +24,7 @@ std::string escapeCsv(const std::string& value) {
 
 std::string layerNameOf(const Pad& pad) {
     if (!pad.layerName.empty()) return pad.layerName;
-    const int layer = pad.holeSize > 0.0 ? 74 : (pad.layer == 0 ? 1 : pad.layer);
+    const int layer = pad.holeSize >0.0 ? 74 : (pad.layer == 0 ? 1 : pad.layer);
     return text::pcbLayerName(layer);
 }
 
@@ -39,18 +39,18 @@ const char* noNetName() { return kNoNet; }
 std::string NetConnection::labelList(std::size_t limit) const {
     std::string text;
     for (std::size_t i = 0; i < nodes.size(); ++i) {
-        if (limit > 0 && i >= limit) {
+        if (limit >0 && i >= limit) {
             text += ", …";
             break;
         }
-        if (i > 0) text += ", ";
+        if (i >0) text += ", ";
         text += nodes[i].label;
     }
     return text;
 }
 
-std::vector<NetConnection> buildNetlist(const Document& document) {
-    std::map<std::string, NetConnection> byNet;
+std::vector<NetConnection>buildNetlist(const Document& document) {
+    std::map<std::string, NetConnection>byNet;
 
     for (const auto& pad : document.geometry.pads) {
         const std::string net = pad.net.empty() ? std::string(kNoNet) : pad.net;
@@ -61,7 +61,7 @@ std::vector<NetConnection> buildNetlist(const Document& document) {
         node.pad = pad.designator;
         node.x = pad.x;
         node.y = pad.y;
-        node.throughHole = pad.holeSize > 0.0;
+        node.throughHole = pad.holeSize >0.0;
         node.layer = layerNameOf(pad);
         node.componentIndex = pad.componentIndex;
         if (pad.componentIndex >= 0 &&
@@ -74,7 +74,7 @@ std::vector<NetConnection> buildNetlist(const Document& document) {
         connection.nodes.push_back(std::move(node));
     }
 
-    std::vector<NetConnection> netlist;
+    std::vector<NetConnection>netlist;
     netlist.reserve(byNet.size());
     for (auto& entry : byNet) {
         std::sort(entry.second.nodes.begin(), entry.second.nodes.end(),
@@ -119,7 +119,7 @@ std::string netlistToCsv(const Document& document) {
 }
 
 std::string netlistToText(const Document& document) {
-    const std::vector<NetConnection> netlist = buildNetlist(document);
+    const std::vector<NetConnection>netlist = buildNetlist(document);
     if (netlist.empty()) return std::string("no pads in this document\n");
 
     std::size_t pads = 0;
@@ -133,9 +133,9 @@ std::string netlistToText(const Document& document) {
 
     std::ostringstream out;
     out << document.fileName << "  —  " << named << " nets, " << pads << " pads";
-    if (unconnected > 0) out << "  (" << unconnected << " unconnected)";
+    if (unconnected >0) out << "  (" << unconnected << " unconnected)";
     const int dangling = danglingNetCount(netlist);
-    if (dangling > 0) out << "  (" << dangling << " net(s) with a single pad)";
+    if (dangling >0) out << "  (" << dangling << " net(s) with a single pad)";
     out << "\n";
 
     for (const auto& net : netlist) {

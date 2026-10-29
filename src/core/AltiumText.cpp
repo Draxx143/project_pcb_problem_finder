@@ -71,16 +71,16 @@ void appendUtf8(std::string& out, std::uint32_t cp) {
     if (cp < 0x80) {
         out += static_cast<char>(cp);
     } else if (cp < 0x800) {
-        out += static_cast<char>(0xC0 | (cp >> 6));
+        out += static_cast<char>(0xC0 | (cp >>6));
         out += static_cast<char>(0x80 | (cp & 0x3F));
     } else if (cp < 0x10000) {
-        out += static_cast<char>(0xE0 | (cp >> 12));
-        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+        out += static_cast<char>(0xE0 | (cp >>12));
+        out += static_cast<char>(0x80 | ((cp >>6) & 0x3F));
         out += static_cast<char>(0x80 | (cp & 0x3F));
     } else {
-        out += static_cast<char>(0xF0 | (cp >> 18));
-        out += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
-        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+        out += static_cast<char>(0xF0 | (cp >>18));
+        out += static_cast<char>(0x80 | ((cp >>12) & 0x3F));
+        out += static_cast<char>(0x80 | ((cp >>6) & 0x3F));
         out += static_cast<char>(0x80 | (cp & 0x3F));
     }
 }
@@ -128,7 +128,7 @@ std::string trim(const std::string& value) {
         return c == ' ' || c == '\t' || c == '\r' || c == '\n';
     };
     while (begin < end && isSpace(value[begin])) ++begin;
-    while (end > begin && isSpace(value[end - 1])) --end;
+    while (end >begin && isSpace(value[end - 1])) --end;
     return value.substr(begin, end - begin);
 }
 
@@ -149,9 +149,9 @@ bool equalsNoCase(const std::string& a, const std::string& b) {
     return true;
 }
 
-std::vector<Property> parseParameters(const std::uint8_t* data, std::size_t length,
+std::vector<Property>parseParameters(const std::uint8_t* data, std::size_t length,
                                       bool bytesAreUtf8) {
-    std::vector<Property> properties;
+    std::vector<Property>properties;
     if (data == nullptr || length == 0) return properties;
 
     // Records are NUL terminated; only the part before the first NUL is meaningful.
@@ -166,7 +166,7 @@ std::vector<Property> parseParameters(const std::uint8_t* data, std::size_t leng
     std::size_t tokenStart = 0;
     for (std::size_t i = 0; i <= limit; ++i) {
         if (i == limit || data[i] == '|') {
-            if (i > tokenStart) {
+            if (i >tokenStart) {
                 appendToken(properties, Span{data + tokenStart, i - tokenStart}, bytesAreUtf8);
             }
             tokenStart = i + 1;
@@ -179,8 +179,8 @@ void applyUnicodeOverrides(std::vector<Property>& properties) {
     const Property* flag = find(properties, "UNICODE");
     if (flag == nullptr || upper(trim(flag->value)) != "EXISTS") return;
 
-    std::vector<Property> decoded;
-    std::vector<Property> overrides;
+    std::vector<Property>decoded;
+    std::vector<Property>overrides;
     for (const auto& property : properties) {
         const std::string key = upper(property.name);
         if (key == "UNICODE") continue;
@@ -199,7 +199,7 @@ void applyUnicodeOverrides(std::vector<Property>& properties) {
             const std::string number =
                 entry.value.substr(start, comma == std::string::npos ? std::string::npos : comma - start);
             const long codeUnit = std::strtol(trim(number).c_str(), nullptr, 10);
-            if (codeUnit > 0 && codeUnit <= 0xFFFF)
+            if (codeUnit >0 && codeUnit <= 0xFFFF)
                 appendUtf8(decodedText, static_cast<std::uint32_t>(codeUnit));
             if (comma == std::string::npos) break;
             start = comma + 1;
@@ -242,7 +242,7 @@ double parseMil(const std::string& input) {
     // Strip a known unit suffix, then convert to mil.
     static const struct {
         const char* suffix;
-        double factor; // -> mil
+        double factor; // ->mil
     } units[] = {{"mil", 1.0}, {"mm", 1000.0 / 25.4}, {"in", 1000.0}};
 
     const std::string lowered = lower(value);
@@ -300,7 +300,7 @@ int pcbLayerIdFromName(const std::string& input) {
     // primitive would end up on layer 0 and be drawn in the neutral "unknown" colour.
     bool numeric = !name.empty();
     for (const char c : name) {
-        if (c < '0' || c > '9') {
+        if (c < '0' || c >'9') {
             numeric = false;
             break;
         }
@@ -324,13 +324,13 @@ int pcbLayerIdFromName(const std::string& input) {
     if (name == "DRILLGUIDE") return 55;
     if (name == "DRILLDRAWING") return 57;
 
-    auto numericSuffix = [&name](const char* prefix) -> int {
+    auto numericSuffix = [&name](const char* prefix) ->int {
         const std::size_t length = std::strlen(prefix);
         if (name.rfind(prefix, 0) != 0) return -1;
         return parseInt(name.substr(length), -1);
     };
-    if (const int mid = numericSuffix("MIDLAYER"); mid > 0) return mid + 1;
-    if (const int plane = numericSuffix("INTERNALPLANE"); plane > 0) return plane + 38;
+    if (const int mid = numericSuffix("MIDLAYER"); mid >0) return mid + 1;
+    if (const int plane = numericSuffix("INTERNALPLANE"); plane >0) return plane + 38;
     if (const int mechanical = numericSuffix("MECHANICAL"); mechanical >= 0) return 56 + mechanical;
     return 0;
 }
@@ -392,7 +392,7 @@ bool isValidUtf8(const std::uint8_t* data, std::size_t length) {
         } else {
             return false;
         }
-        if (i + static_cast<std::size_t>(extra) >= length + 0 && i + static_cast<std::size_t>(extra) > length - 1) {
+        if (i + static_cast<std::size_t>(extra) >= length + 0 && i + static_cast<std::size_t>(extra) >length - 1) {
             // truncated sequence at the very end: tolerate it (we may be sniffing a prefix)
             return true;
         }

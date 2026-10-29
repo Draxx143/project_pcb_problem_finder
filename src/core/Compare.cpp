@@ -50,7 +50,7 @@ std::string position(const Component& component) {
 
 std::string padSummary(const Component& component) {
     std::string text = std::to_string(component.padCount);
-    if (component.pinCount > 0) text += " pads / " + std::to_string(component.pinCount) + " pins";
+    if (component.pinCount >0) text += " pads / " + std::to_string(component.pinCount) + " pins";
     else text += " pads";
     return text;
 }
@@ -78,10 +78,10 @@ CompareResult compareDocuments(const Document& left, const Document& right) {
     result.leftCount = left.components.size();
     result.rightCount = right.components.size();
 
-    std::map<std::string, const Component*> leftByKey;
+    std::map<std::string, const Component*>leftByKey;
     for (const auto& component : left.components) leftByKey[keyOf(component)] = &component;
 
-    std::set<std::string> seen;
+    std::set<std::string>seen;
     for (const auto& component : right.components) {
         const std::string key = keyOf(component);
         seen.insert(key);
@@ -103,11 +103,11 @@ CompareResult compareDocuments(const Document& left, const Document& right) {
         compareField(part.changes, "Manufacturer", before.manufacturer, component.manufacturer);
         compareField(part.changes, "Layer", before.layer, component.layer);
         compareField(part.changes, "Pads", padSummary(before), padSummary(component));
-        if (std::fabs(before.rotation - component.rotation) > 0.01) {
+        if (std::fabs(before.rotation - component.rotation) >0.01) {
             part.changes.push_back(FieldChange{"Rotation", formatMil(before.rotation) + "°",
                                                formatMil(component.rotation) + "°"});
         }
-        if (std::fabs(before.x - component.x) > 1.0 || std::fabs(before.y - component.y) > 1.0) {
+        if (std::fabs(before.x - component.x) >1.0 || std::fabs(before.y - component.y) >1.0) {
             part.changes.push_back(FieldChange{"Position", position(before), position(component)});
         }
         if (isDoNotPopulate(before) != isDoNotPopulate(component)) {
@@ -124,8 +124,8 @@ CompareResult compareDocuments(const Document& left, const Document& right) {
 
     // Nets are only meaningful for boards.
     if (left.type == DocType::PcbDoc && right.type == DocType::PcbDoc) {
-        std::set<std::string> leftNets;
-        std::set<std::string> rightNets;
+        std::set<std::string>leftNets;
+        std::set<std::string>rightNets;
         for (const auto& net : left.netSummaries) leftNets.insert(net.name);
         for (const auto& net : right.netSummaries) rightNets.insert(net.name);
         for (const auto& name : rightNets) {

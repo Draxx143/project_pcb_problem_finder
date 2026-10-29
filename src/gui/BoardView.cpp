@@ -19,7 +19,7 @@
 namespace {
 
 QColor toColor(std::uint32_t rgb, double opacity = 1.0) {
-    QColor color(static_cast<int>((rgb >> 16) & 0xFF), static_cast<int>((rgb >> 8) & 0xFF),
+    QColor color(static_cast<int>((rgb >>16) & 0xFF), static_cast<int>((rgb >>8) & 0xFF),
                  static_cast<int>(rgb & 0xFF));
     color.setAlphaF(std::clamp(opacity, 0.0, 1.0));
     return color;
@@ -30,11 +30,11 @@ QColor toColor(std::uint32_t rgb, double opacity = 1.0) {
 QColor toPrintColor(std::uint32_t rgb) {
     if (rgb == 0x0b0f14) return QColor(0xf5, 0xf5, 0xf1);  // board body
     if (rgb == 0x10141a) return QColor(0xc9, 0xcd, 0xd2);  // holes, drills
-    const int r = static_cast<int>((rgb >> 16) & 0xFF);
-    const int g = static_cast<int>((rgb >> 8) & 0xFF);
+    const int r = static_cast<int>((rgb >>16) & 0xFF);
+    const int g = static_cast<int>((rgb >>8) & 0xFF);
     const int b = static_cast<int>(rgb & 0xFF);
     const double luma = 0.299 * r + 0.587 * g + 0.114 * b;
-    if (luma > 190.0) return QColor(0x33, 0x37, 0x3d);     // silkscreen on paper
+    if (luma >190.0) return QColor(0x33, 0x37, 0x3d);     // silkscreen on paper
     return QColor(r, g, b);
 }
 
@@ -173,7 +173,7 @@ void BoardView::wheelEvent(QWheelEvent* event) {
     if (threeD_) {
         const int steps = event->angleDelta().y();
         if (steps == 0) return;
-        threeDZoom_ = std::clamp(threeDZoom_ * (steps > 0 ? 1.12 : 1.0 / 1.12), 0.3, 8.0);
+        threeDZoom_ = std::clamp(threeDZoom_ * (steps >0 ? 1.12 : 1.0 / 1.12), 0.3, 8.0);
         threeDDirty_ = true;
         update();
         event->accept();
@@ -182,7 +182,7 @@ void BoardView::wheelEvent(QWheelEvent* event) {
     if (list_.empty()) return;
     const QPointF anchor = event->position();
     const QPointF before = widgetToBoard(anchor);
-    const double factor = event->angleDelta().y() > 0 ? 1.18 : 1.0 / 1.18;
+    const double factor = event->angleDelta().y() >0 ? 1.18 : 1.0 / 1.18;
     zoom_ = std::clamp(zoom_ * factor, 0.05, 60.0);
     const QPointF after = widgetToBoard(anchor);
     // Keep the point under the cursor fixed while zooming.
@@ -379,7 +379,7 @@ double BoardView::viewMargin() const {
 
 QPointF BoardView::milToWidget(double milX, double milY) const {
     if (!document_.bounds.valid) return QPointF();
-    const double unitsPerMil = list_.unitsPerMil > 0.0 ? list_.unitsPerMil : 1.0;
+    const double unitsPerMil = list_.unitsPerMil >0.0 ? list_.unitsPerMil : 1.0;
     const double margin = viewMargin();
     return boardToWidget((milX - document_.bounds.minX + margin) * unitsPerMil,
                          (document_.bounds.maxY - milY + margin) * unitsPerMil);
@@ -387,7 +387,7 @@ QPointF BoardView::milToWidget(double milX, double milY) const {
 
 QPointF BoardView::widgetToMil(const QPointF& point) const {
     if (!document_.bounds.valid) return QPointF();
-    const double unitsPerMil = list_.unitsPerMil > 0.0 ? list_.unitsPerMil : 1.0;
+    const double unitsPerMil = list_.unitsPerMil >0.0 ? list_.unitsPerMil : 1.0;
     const double margin = viewMargin();
     const QPointF device = widgetToBoard(point);
     return QPointF(device.x() / unitsPerMil + document_.bounds.minX - margin,
@@ -447,7 +447,7 @@ bool pointInPolygon(const QPointF& point, const std::vector<pcbv::Point>& polygo
     for (std::size_t i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
         const double xi = polygon[i].x, yi = polygon[i].y;
         const double xj = polygon[j].x, yj = polygon[j].y;
-        const bool crosses = ((yi > point.y()) != (yj > point.y())) &&
+        const bool crosses = ((yi >point.y()) != (yj >point.y())) &&
                              (point.x() < (xj - xi) * (point.y() - yi) / (yj - yi + 1e-12) + xi);
         if (crosses) inside = !inside;
     }
@@ -659,7 +659,7 @@ bool BoardView::snapToFeature(const QPointF& milPoint, QPointF& snapped, QString
     double best = tolerance;
     auto consider = [&](double x, double y, const std::string& text) {
         const double distance = std::hypot(x - milPoint.x(), y - milPoint.y());
-        if (distance > best) return;
+        if (distance >best) return;
         best = distance;
         snapped = QPointF(x, y);
         label = QString::fromStdString(text);
@@ -761,9 +761,9 @@ void BoardView::paintMeasure(QPainter& painter) const {
                      textWidth + 14.0, 20.0);
         const QRectF bounds = rect().adjusted(2, 2, -2, -2);
         if (plate.left() < bounds.left()) plate.moveLeft(bounds.left());
-        if (plate.right() > bounds.right()) plate.moveRight(bounds.right());
+        if (plate.right() >bounds.right()) plate.moveRight(bounds.right());
         if (plate.top() < bounds.top()) plate.moveTop(bounds.top());
-        if (plate.bottom() > bounds.bottom()) plate.moveBottom(bounds.bottom());
+        if (plate.bottom() >bounds.bottom()) plate.moveBottom(bounds.bottom());
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(0x10, 0x14, 0x1a, 225));
         painter.drawRoundedRect(plate, 4, 4);
@@ -824,7 +824,7 @@ void BoardView::zoomToComponent(int index) {
 }
 
 QPointF BoardView::milToBoardPoint(double milX, double milY) const {
-    const double unitsPerMil = list_.unitsPerMil > 0.0 ? list_.unitsPerMil : 1.0;
+    const double unitsPerMil = list_.unitsPerMil >0.0 ? list_.unitsPerMil : 1.0;
     const double margin = viewMargin();
     const double minX = document_.bounds.valid ? document_.bounds.minX : 0.0;
     const double maxY = document_.bounds.valid ? document_.bounds.maxY : 1.0;
@@ -880,7 +880,7 @@ void BoardView::drawPrimitives(QPainter& painter, double scale, bool forPrint) c
                     painter.setBrush(paint(primitive.color, primitive.opacity));
                     painter.drawPolygon(polygon);
                 }
-                if (primitive.strokeWidth > 0.0) {
+                if (primitive.strokeWidth >0.0) {
                     QPen pen(paint(primitive.color));
                     pen.setWidthF(std::max(primitive.strokeWidth, 0.4 / scale));
                     pen.setJoinStyle(Qt::RoundJoin);
@@ -925,7 +925,7 @@ void BoardView::drawPrimitives(QPainter& painter, double scale, bool forPrint) c
                     painter.setBrush(paint(primitive.color, primitive.opacity));
                     painter.drawEllipse(box);
                 }
-                if (primitive.strokeWidth > 0.0) {
+                if (primitive.strokeWidth >0.0) {
                     QPen pen(paint(primitive.color));
                     pen.setWidthF(std::max(primitive.strokeWidth, 0.4 / scale));
                     painter.setPen(pen);
@@ -942,7 +942,7 @@ void BoardView::drawPrimitives(QPainter& painter, double scale, bool forPrint) c
                 QFont font(QStringLiteral("Arial"));
                 font.setPixelSize(std::max(static_cast<int>(std::lround(primitive.fontSize)), 1));
                 painter.setFont(font);
-                if (primitive.strokeWidth > 0.0) {
+                if (primitive.strokeWidth >0.0) {
                     QPainterPath path;
                     QFontMetricsF metrics(font);
                     const double textWidth = metrics.horizontalAdvance(QString::fromStdString(primitive.text));
@@ -1055,7 +1055,7 @@ void BoardView::paintThreeD(QPainter& painter) {
         // Supersampling costs four times the pixels; skip it for big windows and while
         // the camera is moving.
         const long long area = static_cast<long long>(view.width) * view.height;
-        view.supersample = (threeDQuick_ || area > 2200000) ? 1 : 2;
+        view.supersample = (threeDQuick_ || area >2200000) ? 1 : 2;
         // The renderer reports where the designators land; the widget draws them itself so
         // the text stays crisp at any zoom and follows the system font.
         view.labels = document_.components.size() <= 200;
@@ -1140,7 +1140,7 @@ void BoardView::zoomToDrcLocation(double milX, double milY, const QString& label
     const QPointF center(width() * 0.5, height() * 0.5);
     pan_ = QPointF(10.0, 0.0);
     const QPointF p1 = milToWidget(milX, milY);
-    if (p1.x() > p0.x()) {
+    if (p1.x() >p0.x()) {
         pan_ = center - p0;
     } else {
         pan_ = p0 - center;
@@ -1171,7 +1171,7 @@ void BoardView::paintHeatmap(QPainter& painter) const {
 
     const int cols = 28;
     const int rows = 20;
-    std::vector<double> grid(cols * rows, 0.0);
+    std::vector<double>grid(cols * rows, 0.0);
 
     auto addHeat = [&](double x, double y, double weight) {
         int c = static_cast<int>(((x - minX) / bw) * (cols - 1));
@@ -1191,11 +1191,11 @@ void BoardView::paintHeatmap(QPainter& painter) const {
     for (const auto& p : document_.geometry.pads) addHeat(p.x, p.y, 2.5);
     for (const auto& v : document_.geometry.vias) addHeat(v.x, v.y, 3.0);
     for (const auto& t : document_.geometry.tracks) {
-        addHeat((t.x1 + t.x2) * 0.5, (t.y1 + t.y2) * 0.5, t.width > 12.0 ? 2.2 : 1.0);
+        addHeat((t.x1 + t.x2) * 0.5, (t.y1 + t.y2) * 0.5, t.width >12.0 ? 2.2 : 1.0);
     }
 
     double maxVal = 1.0;
-    for (double v : grid) if (v > maxVal) maxVal = v;
+    for (double v : grid) if (v >maxVal) maxVal = v;
 
     painter.save();
     painter.setRenderHint(QPainter::Antialiasing, true);

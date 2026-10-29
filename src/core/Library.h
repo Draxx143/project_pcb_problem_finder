@@ -23,7 +23,7 @@ struct LibraryFootprint {
     double height = 0.0;      // mil (HEIGHT parameter)
     Bounds bounds;            // extent of the primitives, in mil
     PcbGeometry geometry;     // pads, tracks, arcs, vias, fills, regions
-    std::vector<Property> parameters;
+    std::vector<Property>parameters;
     int padCount = 0;
     int trackCount = 0;
     int arcCount = 0;
@@ -32,7 +32,7 @@ struct LibraryFootprint {
     int regionCount = 0;
     int textCount = 0;
     int bodyCount = 0;
-    std::vector<EmbeddedModel> models;   ///< real 3D models (STEP), when the library has them
+    std::vector<EmbeddedModel>models;   ///< real 3D models (STEP), when the library has them
 };
 
 /// One drawing primitive of a schematic symbol (Altium RECORD 6/8/10/12/13/14/28).
@@ -40,7 +40,7 @@ struct SymbolShape {
     enum class Kind { Line, Polyline, Rectangle, RoundRectangle, Arc, Ellipse, Text };
 
     Kind kind = Kind::Line;
-    std::vector<Point> points;     // mil: line/polyline vertices, rectangle corners
+    std::vector<Point>points;     // mil: line/polyline vertices, rectangle corners
     double radius = 0.0;           // arc / ellipse, mil
     double secondaryRadius = 0.0;  // ellipse second radius, mil
     double startAngle = 0.0;       // arc, degrees
@@ -75,10 +75,10 @@ struct LibrarySymbol {
     std::string description;
     std::string designatorPrefix;  // default designator, e.g. "U?"
     int partCount = 1;             // sub-parts (multi-part symbols)
-    std::vector<Pin> pins;               // name/designator/electrical (list view)
-    std::vector<SymbolPin> pinGeometry;  // the same pins with coordinates (drawing)
-    std::vector<SymbolShape> shapes;     // the symbol's graphics
-    std::vector<Property> parameters;
+    std::vector<Pin>pins;               // name/designator/electrical (list view)
+    std::vector<SymbolPin>pinGeometry;  // the same pins with coordinates (drawing)
+    std::vector<SymbolShape>shapes;     // the symbol's graphics
+    std::vector<Property>parameters;
 
     bool hasDrawing() const { return !shapes.empty() || !pinGeometry.empty(); }
 };
@@ -89,10 +89,10 @@ struct Library {
     Container container = Container::Unknown;
     std::string fileName;
     std::string formatVersion;
-    std::vector<LibraryFootprint> footprints;
-    std::vector<LibrarySymbol> symbols;
-    std::vector<FileEntry> structure;     // OLE tree (binary libraries only)
-    std::vector<std::string> warnings;
+    std::vector<LibraryFootprint>footprints;
+    std::vector<LibrarySymbol>symbols;
+    std::vector<FileEntry>structure;     // OLE tree (binary libraries only)
+    std::vector<std::string>warnings;
 
     bool isFootprintLibrary() const { return type == DocType::PcbLib; }
     std::size_t itemCount() const { return footprints.size() + symbols.size(); }
@@ -113,7 +113,7 @@ void buildLibraryDocument(Document& document, Library& library);
 Document footprintDocument(const LibraryFootprint& footprint, const std::string& fileName);
 
 /// The same for one schematic symbol: its graphics are mapped onto the board drawing
-/// model (lines/polylines -> tracks, rectangles/ellipses -> regions, text -> labels),
+/// model (lines/polylines ->tracks, rectangles/ellipses ->regions, text ->labels),
 /// so the board view, the SVG export and printing work without a second renderer.
 Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName);
 
@@ -138,7 +138,7 @@ std::size_t attachModelsFromFile(Document& document, const std::string& libraryP
 struct LibraryAttachment {
     std::size_t libraries = 0;             ///< bundles that were read
     std::size_t parts = 0;                 ///< components that got a model or a datasheet
-    std::vector<std::string> files;        ///< the bundles that were used
+    std::vector<std::string>files;        ///< the bundles that were used
 };
 
 /// Finds the library bundles that belong to a board: next to it, in a "library" folder
@@ -147,7 +147,7 @@ struct LibraryAttachment {
 LibraryAttachment attachLibraryFolder(Document& document, const std::string& boardPath);
 
 /// The bundle files `attachLibraryFolder` would use (exposed for the CLI and the tests).
-std::vector<std::string> findLibraryBundles(const std::string& boardPath);
+std::vector<std::string>findLibraryBundles(const std::string& boardPath);
 
 /// Value of a part parameter (MANUFACTURER, MPN, DATASHEET, …), empty when absent.
 std::string partProperty(const std::vector<Property>& parameters, const std::string& name);

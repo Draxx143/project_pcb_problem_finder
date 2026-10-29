@@ -37,7 +37,7 @@ struct DrcReport {
     int warningCount = 0;
     int infoCount = 0;
     double healthScore = 100.0; // 0..100 industrial manufacturing readiness score
-    std::vector<DrcViolation> violations;
+    std::vector<DrcViolation>violations;
 };
 
 /// Runs industrial DRC/DFM checks on a parsed PCB document.

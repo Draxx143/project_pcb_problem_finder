@@ -31,11 +31,11 @@ using text::valueOf;
 constexpr std::uint32_t kBlockSizeMask = 0x00FFFFFFu;
 
 std::uint16_t rdU16(const std::vector<std::uint8_t>& b, std::size_t off) {
-    if (off + 2 > b.size()) return 0;
+    if (off + 2 >b.size()) return 0;
     return static_cast<std::uint16_t>(b[off] | (b[off + 1] << 8));
 }
 std::uint32_t rdU32(const std::vector<std::uint8_t>& b, std::size_t off) {
-    if (off + 4 > b.size()) return 0;
+    if (off + 4 >b.size()) return 0;
     return static_cast<std::uint32_t>(b[off]) | (static_cast<std::uint32_t>(b[off + 1]) << 8) |
            (static_cast<std::uint32_t>(b[off + 2]) << 16) | (static_cast<std::uint32_t>(b[off + 3]) << 24);
 }
@@ -46,7 +46,7 @@ std::uint8_t rdB(const std::vector<std::uint8_t>& b, std::size_t off) {
     return off < b.size() ? b[off] : 0;
 }
 double rdF64(const std::vector<std::uint8_t>& b, std::size_t off) {
-    if (off + 8 > b.size()) return 0.0;
+    if (off + 8 >b.size()) return 0.0;
     std::uint64_t bits = 0;
     for (int i = 7; i >= 0; --i) bits = (bits << 8) | b[off + static_cast<std::size_t>(i)];
     double result = 0.0;
@@ -59,23 +59,23 @@ class BlockStream {
 public:
     explicit BlockStream(const std::vector<std::uint8_t>& data) : data_(data) {}
 
-    bool atEnd() const { return pos_ + 4 > data_.size(); }
+    bool atEnd() const { return pos_ + 4 >data_.size(); }
 
     bool next(std::vector<std::uint8_t>& payload) {
-        if (pos_ + 4 > data_.size()) return false;
+        if (pos_ + 4 >data_.size()) return false;
         const std::uint32_t header = rdU32(data_, pos_);
         const std::uint32_t size = header & kBlockSizeMask;
         pos_ += 4;
         if (size == 0) return false;
-        if (pos_ + size > data_.size()) return false;
+        if (pos_ + size >data_.size()) return false;
         payload.assign(data_.begin() + static_cast<std::ptrdiff_t>(pos_),
                        data_.begin() + static_cast<std::ptrdiff_t>(pos_ + size));
         pos_ += size;
         return true;
     }
 
-    std::vector<std::uint8_t> nextRaw() {
-        std::vector<std::uint8_t> payload;
+    std::vector<std::uint8_t>nextRaw() {
+        std::vector<std::uint8_t>payload;
         if (!next(payload)) return {};
         return payload;
     }
@@ -97,7 +97,7 @@ private:
 std::string readStringBlock(BlockStream& bs) {
     const std::vector<std::uint8_t>& data = bs.data();
     const std::size_t start = bs.position();
-    if (start + 4 > data.size()) {
+    if (start + 4 >data.size()) {
         bs.setPosition(data.size());
         return {};
     }
@@ -120,10 +120,10 @@ int countSingleBlockRecords(const std::vector<std::uint8_t>& data) {
     int count = 0;
     while (pos < data.size()) {
         ++pos; // object id byte
-        if (pos + 4 > data.size()) return -1;
+        if (pos + 4 >data.size()) return -1;
         const std::uint32_t size = rdU32(data, pos) & kBlockSizeMask;
         pos += 4;
-        if (size == 0 || pos + size > data.size()) return -1;
+        if (size == 0 || pos + size >data.size()) return -1;
         pos += size;
         ++count;
     }
@@ -141,11 +141,11 @@ bool readPadRecord(const std::vector<std::uint8_t>& data, std::size_t& pos, Pad&
     ++pos; // object id (always 2 for pads)
 
     for (int i = 0; i < 3; ++i) {
-        if (pos + 4 > data.size()) return false;
+        if (pos + 4 >data.size()) return false;
         const std::uint32_t size = rdU32(data, pos) & kBlockSizeMask;
         pos += 4;
         if (size == 0) continue;
-        if (pos + size > data.size()) return false;
+        if (pos + size >data.size()) return false;
         if (i == 0 && size >= 1) {
             const std::size_t length = std::min<std::size_t>(data[pos], size - 1);
             pad.designator = text::fromCp1252(data.data() + pos + 1, length);
@@ -153,14 +153,14 @@ bool readPadRecord(const std::vector<std::uint8_t>& data, std::size_t& pos, Pad&
         pos += size;
     }
 
-    if (pos + 4 > data.size()) return false;
+    if (pos + 4 >data.size()) return false;
     const std::uint32_t skipSize = rdU32(data, pos) & kBlockSizeMask;
     pos += 4 + skipSize;
 
-    if (pos + 4 > data.size()) return false;
+    if (pos + 4 >data.size()) return false;
     const std::uint32_t mainSize = rdU32(data, pos) & kBlockSizeMask;
     pos += 4;
-    if (mainSize < 61 || pos + mainSize > data.size()) return false;
+    if (mainSize < 61 || pos + mainSize >data.size()) return false;
     const std::size_t main = pos;
 
     pad.layer = rdB(data, main + 0);
@@ -190,7 +190,7 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
     doc.container = Container::CompoundBinary;
 
     // --- version stamps ---
-    const std::vector<std::uint8_t> fh6 = cf.stream("FileHeaderSix");
+    const std::vector<std::uint8_t>fh6 = cf.stream("FileHeaderSix");
     if (!fh6.empty()) {
         BlockStream bs(fh6);
         std::string version = readStringBlock(bs);
@@ -202,12 +202,12 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
     }
 
     // --- board parameters ---
-    const std::vector<std::uint8_t> boardData = cf.stream("Board6/Data");
+    const std::vector<std::uint8_t>boardData = cf.stream("Board6/Data");
     if (!boardData.empty()) {
         BlockStream bs(boardData);
-        std::vector<std::uint8_t> payload;
+        std::vector<std::uint8_t>payload;
         if (bs.next(payload)) {
-            const std::vector<Property> props = text::parseParameters(payload.data(), payload.size());
+            const std::vector<Property>props = text::parseParameters(payload.data(), payload.size());
             doc.boardVersion = valueOf(props, "VERSION");
             const std::string date = valueOf(props, "DATE");
             const std::string time = valueOf(props, "TIME");
@@ -216,14 +216,14 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
     }
 
     // --- nets ---
-    std::map<int, std::string> netNames;
-    const std::vector<std::uint8_t> netsData = cf.stream("Nets6/Data");
+    std::map<int, std::string>netNames;
+    const std::vector<std::uint8_t>netsData = cf.stream("Nets6/Data");
     if (!netsData.empty()) {
         BlockStream bs(netsData);
-        std::vector<std::uint8_t> payload;
+        std::vector<std::uint8_t>payload;
         int index = 0;
         while (bs.next(payload)) {
-            const std::vector<Property> props = text::parseParameters(payload.data(), payload.size());
+            const std::vector<Property>props = text::parseParameters(payload.data(), payload.size());
             Net net;
             net.index = index;
             net.name = valueOf(props, "NAME");
@@ -236,13 +236,13 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
     }
 
     // --- components ---
-    const std::vector<std::uint8_t> compData = cf.stream("Components6/Data");
+    const std::vector<std::uint8_t>compData = cf.stream("Components6/Data");
     if (!compData.empty()) {
         BlockStream bs(compData);
-        std::vector<std::uint8_t> payload;
+        std::vector<std::uint8_t>payload;
         int index = 0;
         while (bs.next(payload)) {
-            const std::vector<Property> props = text::parseParameters(payload.data(), payload.size());
+            const std::vector<Property>props = text::parseParameters(payload.data(), payload.size());
             if (props.empty()) {
                 ++index;
                 continue;
@@ -281,7 +281,7 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
     }
 
     // --- pads ---
-    const std::vector<std::uint8_t> padData = cf.stream("Pads6/Data");
+    const std::vector<std::uint8_t>padData = cf.stream("Pads6/Data");
     if (!padData.empty()) {
         std::size_t pos = 0;
         int parsed = 0;
@@ -301,7 +301,7 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
                 Component& c = doc.components[static_cast<std::size_t>(componentIndex)];
                 c.pads.push_back(pad);
                 ++c.padCount;
-                if (pad.holeSize > 0.0) ++c.throughHolePads;
+                if (pad.holeSize >0.0) ++c.throughHolePads;
             }
             ++parsed;
             if (pos == before) break;
@@ -311,17 +311,17 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
     }
 
     // --- tracks / vias ---
-    const std::vector<std::uint8_t> trackData = cf.stream("Tracks6/Data");
+    const std::vector<std::uint8_t>trackData = cf.stream("Tracks6/Data");
     if (!trackData.empty()) {
         std::size_t pos = 0;
         int count = 0;
         while (pos < trackData.size()) {
             const std::size_t before = pos;
             ++pos; // object id
-            if (pos + 4 > trackData.size()) break;
+            if (pos + 4 >trackData.size()) break;
             const std::uint32_t size = rdU32(trackData, pos) & kBlockSizeMask;
             pos += 4;
-            if (size == 0 || pos + size > trackData.size()) break;
+            if (size == 0 || pos + size >trackData.size()) break;
             TrackFeature track;
             track.layer = rdB(trackData, pos);
             track.x1 = static_cast<double>(rdI32(trackData, pos + 13)) / 10000.0;
@@ -341,17 +341,17 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
         doc.pcb.tracks = count;
     }
 
-    const std::vector<std::uint8_t> viaData = cf.stream("Vias6/Data");
+    const std::vector<std::uint8_t>viaData = cf.stream("Vias6/Data");
     if (!viaData.empty()) {
         std::size_t pos = 0;
         int count = 0;
         while (pos < viaData.size()) {
             const std::size_t before = pos;
             ++pos;
-            if (pos + 4 > viaData.size()) break;
+            if (pos + 4 >viaData.size()) break;
             const std::uint32_t size = rdU32(viaData, pos) & kBlockSizeMask;
             pos += 4;
-            if (size == 0 || pos + size > viaData.size()) break;
+            if (size == 0 || pos + size >viaData.size()) break;
             ViaFeature via;
             via.x = static_cast<double>(rdI32(viaData, pos + 13)) / 10000.0;
             via.y = static_cast<double>(rdI32(viaData, pos + 17)) / 10000.0;
@@ -369,17 +369,17 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
     }
 
     // --- arcs ---
-    const std::vector<std::uint8_t> arcData = cf.stream("Arcs6/Data");
+    const std::vector<std::uint8_t>arcData = cf.stream("Arcs6/Data");
     if (!arcData.empty()) {
         std::size_t pos = 0;
         int count = 0;
         while (pos < arcData.size()) {
             const std::size_t before = pos;
             ++pos; // object id (1 = arc)
-            if (pos + 4 > arcData.size()) break;
+            if (pos + 4 >arcData.size()) break;
             const std::uint32_t size = rdU32(arcData, pos) & kBlockSizeMask;
             pos += 4;
-            if (size < 56 || pos + size > arcData.size()) break;
+            if (size < 56 || pos + size >arcData.size()) break;
             ArcFeature arc;
             arc.layer = rdB(arcData, pos);
             arc.cx = static_cast<double>(rdI32(arcData, pos + 13)) / 10000.0;
@@ -409,7 +409,7 @@ void parseBinaryPcb(CompoundFile& cf, Document& doc) {
         {"ComponentBodies6/Data", &PcbCounts::componentBodies},
     };
     for (const auto& counter : counters) {
-        const std::vector<std::uint8_t> data = cf.stream(counter.storage);
+        const std::vector<std::uint8_t>data = cf.stream(counter.storage);
         if (data.empty()) continue;
         const int count = countSingleBlockRecords(data);
         if (count >= 0) doc.pcb.*(counter.field) = count;
@@ -454,8 +454,8 @@ void decodeBinaryPin(const std::vector<std::uint8_t>& payload, std::vector<Prope
     auto byte = [&payload, &pos]() {
         return pos < payload.size() ? payload[pos++] : 0;
     };
-    auto i16 = [&payload, &pos]() -> int {
-        if (pos + 2 > payload.size()) {
+    auto i16 = [&payload, &pos]() ->int {
+        if (pos + 2 >payload.size()) {
             pos = payload.size();
             return 0;
         }
@@ -504,23 +504,23 @@ void decodeBinaryPin(const std::vector<std::uint8_t>& payload, std::vector<Prope
     if ((conglomerate & 0x04) != 0) add("HIDDEN", "T");
 }
 
-std::vector<detail::SchRecord> readBinarySchRecords(const std::vector<std::uint8_t>& header) {
-    std::vector<detail::SchRecord> records;
+std::vector<detail::SchRecord>readBinarySchRecords(const std::vector<std::uint8_t>& header) {
+    std::vector<detail::SchRecord>records;
     std::size_t pos = 0;
     int objectIndex = 0;
     while (pos + 4 <= header.size()) {
         const std::uint32_t sizeHeader = rdU32(header, pos);
         const std::uint32_t size = sizeHeader & kBlockSizeMask;
-        const std::uint8_t flags = static_cast<std::uint8_t>((sizeHeader >> 24) & 0xFF);
+        const std::uint8_t flags = static_cast<std::uint8_t>((sizeHeader >>24) & 0xFF);
         pos += 4;
-        if (size == 0 || pos + size > header.size()) break;
+        if (size == 0 || pos + size >header.size()) break;
 
         detail::SchRecord record;
         record.binary = (flags == 0x01);
         if (record.binary) {
             record.type = (size >= 4) ? rdI32(header, pos) : -1;
             if (record.type == 2 && size >= 4) {
-                const std::vector<std::uint8_t> payload(
+                const std::vector<std::uint8_t>payload(
                     header.begin() + static_cast<std::ptrdiff_t>(pos + 4),
                     header.begin() + static_cast<std::ptrdiff_t>(pos + size));
                 decodeBinaryPin(payload, record.props);
@@ -557,7 +557,7 @@ std::string printableSignature(const std::vector<std::uint8_t>& bytes, std::size
         } else {
             static const char* hex = "0123456789ABCDEF";
             out += "\\x";
-            out += hex[(c >> 4) & 0xF];
+            out += hex[(c >>4) & 0xF];
             out += hex[c & 0xF];
         }
     }
@@ -596,7 +596,7 @@ bool asciiLooksLikePcb(const std::vector<std::uint8_t>& bytes) {
 
 namespace detail {
 
-std::vector<SchRecord> readSchRecordStream(const std::vector<std::uint8_t>& stream) {
+std::vector<SchRecord>readSchRecordStream(const std::vector<std::uint8_t>& stream) {
     // The frame reader lives in this file's anonymous namespace.
     return ::pcbv::readBinarySchRecords(stream);
 }
@@ -634,7 +634,7 @@ void buildSchDocument(const std::vector<SchRecord>& records, Document& document)
     // Newer files always carry OWNERINDEX. Very old exports sometimes omit it; in that
     // case primitives belong to the component that precedes them, so we fall back to the
     // most recent component record (this mirrors how Altium itself reads such files).
-    std::map<int, std::vector<const SchRecord*>> children;
+    std::map<int, std::vector<const SchRecord*>>children;
     int lastComponentIndex = -1;
     for (const auto& record : records) {
         if (record.index < 0) continue;
@@ -722,7 +722,7 @@ void buildSchDocument(const std::vector<SchRecord>& records, Document& document)
                     pin.ownerPart = parseInt(valueOf(child->props, "OWNERPARTID", "1"), 1);
                     c.pins.push_back(pin);
                 } else if (child->type == 44) {
-                    // ImplementationList -> Implementation (RECORD=45) with MODELTYPE=PCBLIB.
+                    // ImplementationList ->Implementation (RECORD=45) with MODELTYPE=PCBLIB.
                     const auto implIt = children.find(child->index);
                     if (implIt == children.end()) continue;
                     for (const SchRecord* implRecord : implIt->second) {
@@ -823,12 +823,12 @@ ParseOutcome parseFile(const std::string& path) {
             outcome.error = "file is empty: " + path;
             return outcome;
         }
-        std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
+        std::vector<std::uint8_t>bytes(static_cast<std::size_t>(size));
         in.read(reinterpret_cast<char*>(bytes.data()), size);
         in.close();
 
         // ---- sniff the container ----
-        std::vector<std::uint8_t> head(bytes.begin(),
+        std::vector<std::uint8_t>head(bytes.begin(),
                                        bytes.begin() + static_cast<std::ptrdiff_t>(
                                                            std::min<std::size_t>(bytes.size(), 65536)));
         outcome.signature = printableSignature(head);
@@ -897,9 +897,9 @@ ParseOutcome parseFile(const std::string& path) {
                 parseBinaryPcb(cf, doc);
             } else if (doc.type == DocType::SchDoc) {
                 doc.container = Container::CompoundBinary;
-                const std::vector<std::uint8_t> header = cf.stream("FileHeader");
+                const std::vector<std::uint8_t>header = cf.stream("FileHeader");
                 if (header.empty()) throw std::runtime_error("SchDoc has no FileHeader stream");
-                const std::vector<detail::SchRecord> records = readBinarySchRecords(header);
+                const std::vector<detail::SchRecord>records = readBinarySchRecords(header);
                 detail::buildSchDocument(records, doc);
             } else {
                 outcome.error =

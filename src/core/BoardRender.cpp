@@ -41,8 +41,8 @@ bool hasBoardGeometry(const Document& doc) {
     return !doc.geometry.empty();
 }
 
-std::set<int> defaultHiddenLayers() {
-    std::set<int> hidden;
+std::set<int>defaultHiddenLayers() {
+    std::set<int>hidden;
     for (const int layer : {35, 36, 37, 38, 55, 56, 57, 73}) hidden.insert(layer);
     for (int layer = 58; layer <= 72; ++layer) hidden.insert(layer);  // mechanical 1..15
     return hidden;
@@ -228,12 +228,12 @@ BoardRenderList buildBoardRender(const Document& doc, const BoardRenderOptions& 
     // --- pads ----------------------------------------------------------------
     if (options.pads) {
         for (const auto& pad : doc.geometry.pads) {
-            const double widthMil = pad.width > 0.0 ? pad.width : pad.height;
-            const double heightMil = pad.height > 0.0 ? pad.height : pad.width;
+            const double widthMil = pad.width >0.0 ? pad.width : pad.height;
+            const double heightMil = pad.height >0.0 ? pad.height : pad.width;
             const double halfW = widthMil * view.unit / 2.0;
             const double halfH = heightMil * view.unit / 2.0;
             if (halfW <= 0.0 || halfH <= 0.0) continue;
-            const bool throughHole = pad.holeSize > 0.0;
+            const bool throughHole = pad.holeSize >0.0;
             // A through-hole pad lives on every copper layer; it only disappears once
             // both outer layers are switched off.
             const int padLayer = throughHole ? 74 : (pad.layer == 0 ? 1 : pad.layer);
@@ -286,7 +286,7 @@ BoardRenderList buildBoardRender(const Document& doc, const BoardRenderOptions& 
         ring.net = via.net;
         ring.selectable = true;
         push(ring);
-        if (via.hole > 0.0) {
+        if (via.hole >0.0) {
             RenderPrimitive hole = ring;
             hole.color = 0x10141a;
             hole.opacity = 1.0;

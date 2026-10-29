@@ -23,7 +23,7 @@ std::string f(double value) {
 std::string hex(std::uint32_t rgb) {
     static const char* digits = "0123456789abcdef";
     std::string out = "#";
-    for (int shift = 20; shift >= 0; shift -= 4) out += digits[(rgb >> shift) & 0xF];
+    for (int shift = 20; shift >= 0; shift -= 4) out += digits[(rgb >>shift) & 0xF];
     return out;
 }
 
@@ -93,7 +93,7 @@ std::string toSvg(const Document& doc, const BoardRenderOptions& options) {
                     << pointsAttr(primitive.points) << "\" fill=\""
                     << (primitive.filled ? color : "none") << "\"";
                 if (primitive.filled) svg << " fill-opacity=\"" << f(primitive.opacity) << "\"";
-                if (primitive.strokeWidth > 0.0) {
+                if (primitive.strokeWidth >0.0) {
                     svg << " stroke=\"" << color << "\" stroke-width=\""
                         << f(primitive.strokeWidth) << "\"";
                     if (primitive.dashed) svg << " stroke-dasharray=\"6 4\"";
@@ -106,7 +106,7 @@ std::string toSvg(const Document& doc, const BoardRenderOptions& options) {
                     << f(primitive.center.y) << "\" r=\"" << f(primitive.radius) << "\" fill=\""
                     << (primitive.filled ? color : "none") << "\"";
                 if (primitive.filled) svg << " fill-opacity=\"" << f(primitive.opacity) << "\"";
-                if (primitive.strokeWidth > 0.0) {
+                if (primitive.strokeWidth >0.0) {
                     svg << " stroke=\"" << color << "\" stroke-width=\""
                         << f(primitive.strokeWidth) << "\"";
                 }
@@ -124,7 +124,7 @@ std::string toSvg(const Document& doc, const BoardRenderOptions& options) {
                     svg << " transform=\"rotate(" << f(primitive.rotation) << " "
                         << f(primitive.x) << " " << f(primitive.y) << ")\"";
                 }
-                if (primitive.strokeWidth > 0.0) {
+                if (primitive.strokeWidth >0.0) {
                     svg << " paint-order=\"stroke\" stroke=\"#10141a\" stroke-width=\""
                         << f(primitive.strokeWidth) << "\"";
                 }

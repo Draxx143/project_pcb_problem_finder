@@ -43,12 +43,12 @@ constexpr std::uint32_t kBlockSizeMask = 0x00FFFFFF;
 void buildSymbols(const std::vector<detail::SchRecord>& records, Library& library);
 
 std::uint16_t rdU16(const std::vector<std::uint8_t>& b, std::size_t off) {
-    if (off + 2 > b.size()) return 0;
+    if (off + 2 >b.size()) return 0;
     return static_cast<std::uint16_t>(b[off] | (b[off + 1] << 8));
 }
 
 std::uint32_t rdU32(const std::vector<std::uint8_t>& b, std::size_t off) {
-    if (off + 4 > b.size()) return 0;
+    if (off + 4 >b.size()) return 0;
     return static_cast<std::uint32_t>(b[off]) | (static_cast<std::uint32_t>(b[off + 1]) << 8) |
            (static_cast<std::uint32_t>(b[off + 2]) << 16) |
            (static_cast<std::uint32_t>(b[off + 3]) << 24);
@@ -59,7 +59,7 @@ std::int32_t rdI32(const std::vector<std::uint8_t>& b, std::size_t off) {
 }
 
 double rdF64(const std::vector<std::uint8_t>& b, std::size_t off) {
-    if (off + 8 > b.size()) return 0.0;
+    if (off + 8 >b.size()) return 0.0;
     std::uint64_t raw = 0;
     for (int i = 7; i >= 0; --i) raw = (raw << 8) | b[off + static_cast<std::size_t>(i)];
     double value = 0.0;
@@ -75,10 +75,10 @@ std::uint8_t rdB(const std::vector<std::uint8_t>& b, std::size_t off) {
 /// Reads a size-prefixed block: [u32 size][size bytes]. Returns false at the end.
 bool readBlock(const std::vector<std::uint8_t>& data, std::size_t& pos,
                std::vector<std::uint8_t>& out) {
-    if (pos + 4 > data.size()) return false;
+    if (pos + 4 >data.size()) return false;
     const std::uint32_t size = rdU32(data, pos) & kBlockSizeMask;
     pos += 4;
-    if (size == 0 || pos + size > data.size()) return false;
+    if (size == 0 || pos + size >data.size()) return false;
     out.assign(data.begin() + static_cast<std::ptrdiff_t>(pos),
                data.begin() + static_cast<std::ptrdiff_t>(pos + size));
     pos += size;
@@ -88,7 +88,7 @@ bool readBlock(const std::vector<std::uint8_t>& data, std::size_t& pos,
 /// Reads a "string block": [u32 size][u8 length][text]. Altium sometimes writes a size
 /// that is one byte short, so the length is clamped to what is actually there.
 std::string readStringBlock(const std::vector<std::uint8_t>& data, std::size_t& pos) {
-    if (pos + 4 > data.size()) {
+    if (pos + 4 >data.size()) {
         pos = data.size();
         return {};
     }
@@ -111,10 +111,10 @@ std::string readStringBlock(const std::vector<std::uint8_t>& data, std::size_t& 
 }
 
 /// Parses a parameter text block ("|KEY=VALUE|…", usually NUL terminated).
-std::vector<Property> parseParameterText(const std::vector<std::uint8_t>& block) {
+std::vector<Property>parseParameterText(const std::vector<std::uint8_t>& block) {
     if (block.empty()) return {};
     std::size_t length = block.size();
-    while (length > 0 && block[length - 1] == 0) --length;
+    while (length >0 && block[length - 1] == 0) --length;
     return text::parseParameters(block.data(), length);
 }
 
@@ -129,11 +129,11 @@ std::string padLayerLabel(const std::vector<Pad>& pads) {
     for (const Pad& pad : pads) {
         if (pad.layer == 1) ++top;
         else if (pad.layer == 32) ++bottom;
-        else if (pad.layer == 74 || pad.holeSize > 0.0) ++multi;
+        else if (pad.layer == 74 || pad.holeSize >0.0) ++multi;
     }
-    if (multi > 0 || (top > 0 && bottom > 0)) return "BOTH";
-    if (bottom > 0) return "BOTTOM";
-    if (top > 0) return "TOP";
+    if (multi >0 || (top >0 && bottom >0)) return "BOTH";
+    if (bottom >0) return "BOTTOM";
+    if (top >0) return "TOP";
     return {};
 }
 
@@ -144,8 +144,8 @@ std::string padLayerLabel(const std::vector<Pad>& pads) {
 /// Reads the 3D models of a library. Altium stores each model as a zlib compressed STEP
 /// file under the "Models" storage ("0", "1", …) and keeps its name, rotation and offset in
 /// the "Models/Data" parameter block. This is the real part data — not a guess.
-std::vector<EmbeddedModel> readEmbeddedModels(CompoundFile& file) {
-    std::vector<EmbeddedModel> models;
+std::vector<EmbeddedModel>readEmbeddedModels(CompoundFile& file) {
+    std::vector<EmbeddedModel>models;
     // Models live under the library storage in binary PcbLib files.
     const FileEntry* library = file.root().find("Library");
     const FileEntry* storage = library != nullptr ? library->find("Models")
@@ -154,14 +154,14 @@ std::vector<EmbeddedModel> readEmbeddedModels(CompoundFile& file) {
     const std::string base = storage->path.empty() ? std::string("Models") : storage->path;
 
     // Model names/placements, in the same order as the numeric stream names.
-    std::vector<std::vector<Property>> parameters;
+    std::vector<std::vector<Property>>parameters;
     {
-        const std::vector<std::uint8_t> data = file.stream(base + "/Data");
+        const std::vector<std::uint8_t>data = file.stream(base + "/Data");
         std::size_t start = 0;
         for (std::size_t i = 0; i <= data.size(); ++i) {
             if (i < data.size() && data[i] != 0) continue;
-            if (i > start) {
-                std::vector<Property> block =
+            if (i >start) {
+                std::vector<Property>block =
                     text::parseParameters(data.data() + start, i - start);
                 if (!block.empty()) parameters.push_back(std::move(block));
             }
@@ -170,12 +170,12 @@ std::vector<EmbeddedModel> readEmbeddedModels(CompoundFile& file) {
     }
 
     // Numeric stream names sorted by their value: "0", "1", "2", …
-    std::vector<std::pair<int, std::string>> streams;
+    std::vector<std::pair<int, std::string>>streams;
     for (const FileEntry& entry : storage->children) {
         if (entry.isStorage) continue;
         bool numeric = !entry.name.empty();
         for (const char c : entry.name) {
-            if (c < '0' || c > '9') numeric = false;
+            if (c < '0' || c >'9') numeric = false;
         }
         if (!numeric) continue;
         streams.emplace_back(std::atoi(entry.name.c_str()), entry.name);
@@ -184,10 +184,10 @@ std::vector<EmbeddedModel> readEmbeddedModels(CompoundFile& file) {
 
     for (std::size_t index = 0; index < streams.size(); ++index) {
         const std::string path = base + "/" + streams[index].second;
-        const std::vector<std::uint8_t> raw = file.stream(path);
+        const std::vector<std::uint8_t>raw = file.stream(path);
         if (raw.empty()) continue;
 
-        std::vector<std::uint8_t> decoded;
+        std::vector<std::uint8_t>decoded;
         if (!inflateAny(raw.data(), raw.size(), decoded)) continue;
         const std::string stepText(reinterpret_cast<const char*>(decoded.data()), decoded.size());
         if (!looksLikeStep(stepText)) continue;
@@ -211,9 +211,9 @@ std::vector<EmbeddedModel> readEmbeddedModels(CompoundFile& file) {
 }
 
 /// Every model id the footprint refers to ("MODELID={…}" inside its 3D body record).
-std::vector<std::string> modelIds(const std::vector<std::uint8_t>& data) {
+std::vector<std::string>modelIds(const std::vector<std::uint8_t>& data) {
     static const std::string marker = "MODELID=";
-    std::vector<std::string> ids;
+    std::vector<std::string>ids;
     const std::string text(reinterpret_cast<const char*>(data.data()), data.size());
     std::size_t pos = 0;
     while ((pos = text.find(marker, pos)) != std::string::npos) {
@@ -230,7 +230,7 @@ std::vector<std::string> modelIds(const std::vector<std::uint8_t>& data) {
 /// Reads one pad record: three string blocks, one skipped block, the main block and the
 /// trailing solder-mask block (the same layout the PcbDoc reader uses).
 bool readPadRecord(const std::vector<std::uint8_t>& data, std::size_t& pos, Pad& pad) {
-    std::vector<std::uint8_t> block;
+    std::vector<std::uint8_t>block;
     if (pos >= data.size() || data[pos] != 2) return false;
     ++pos;
 
@@ -266,15 +266,15 @@ void addRegionRecord(const std::vector<std::uint8_t>& block, LibraryFootprint& f
     if (block.size() < 22) return;
     const std::uint16_t holeCount = rdU16(block, 14);
     std::size_t pos = 18;
-    std::vector<std::uint8_t> params;
+    std::vector<std::uint8_t>params;
     if (!readBlock(block, pos, params)) return;
-    if (pos + 4 > block.size()) return;
+    if (pos + 4 >block.size()) return;
     const std::uint32_t vertexCount = rdU32(block, pos);
     pos += 4;
     RegionFeature region;
     region.layer = rdB(block, 0);
     for (std::uint32_t i = 0; i < vertexCount; ++i) {
-        if (pos + 16 > block.size()) break;
+        if (pos + 16 >block.size()) break;
         Point point;
         // Region vertices are 1/10000 mil stored as doubles.
         point.x = rdF64(block, pos) / 10000.0;
@@ -294,7 +294,7 @@ void readFootprintPrimitives(const std::vector<std::uint8_t>& data, std::size_t 
                              LibraryFootprint& footprint, std::vector<std::string>& warnings,
                              int& unknownRecords) {
     std::size_t pos = start;
-    std::vector<std::uint8_t> block;
+    std::vector<std::uint8_t>block;
     while (pos < data.size()) {
         const std::size_t before = pos;
         const std::uint8_t objectId = data[pos];
@@ -313,7 +313,7 @@ void readFootprintPrimitives(const std::vector<std::uint8_t>& data, std::size_t 
                 arc.width = milFromRaw(rdI32(block, 41));
                 footprint.geometry.arcs.push_back(arc);
                 ++footprint.arcCount;
-                if (arc.radius > 0.0) {
+                if (arc.radius >0.0) {
                     footprint.bounds.add(arc.cx - arc.radius, arc.cy - arc.radius);
                     footprint.bounds.add(arc.cx + arc.radius, arc.cy + arc.radius);
                 }
@@ -409,7 +409,7 @@ void readFootprintPrimitives(const std::vector<std::uint8_t>& data, std::size_t 
             pos = before + 1;
         }
     }
-    if (unknownRecords > 0) {
+    if (unknownRecords >0) {
         warnings.push_back("Footprint '" + footprint.name + "': " +
                            std::to_string(unknownRecords) +
                            " primitive record(s) could not be decoded and were skipped.");
@@ -421,7 +421,7 @@ bool readPcbLibrary(CompoundFile& file, Library& library, std::string& error) {
     library.container = Container::CompoundBinary;
     library.structure = file.root().children;
 
-    const std::vector<std::uint8_t> header = file.stream("FileHeader");
+    const std::vector<std::uint8_t>header = file.stream("FileHeader");
     if (!header.empty()) {
         std::size_t pos = 0;
         const std::string version = readStringBlock(header, pos);
@@ -429,29 +429,29 @@ bool readPcbLibrary(CompoundFile& file, Library& library, std::string& error) {
     }
     if (library.formatVersion.empty()) library.formatVersion = "PCB binary library (OLE2)";
 
-    std::vector<std::uint8_t> data = file.stream("Library/Data");
+    std::vector<std::uint8_t>data = file.stream("Library/Data");
     if (data.empty()) {
         error = "This .PcbLib has no 'Library/Data' stream — the file may be damaged.";
         return false;
     }
 
-    std::vector<std::uint8_t> block;
+    std::vector<std::uint8_t>block;
     std::size_t pos = 0;
     if (!readBlock(data, pos, block)) {
         error = "The .PcbLib library header could not be decoded.";
         return false;
     }
-    const std::vector<Property> libraryParameters = parseParameterText(block);
+    const std::vector<Property>libraryParameters = parseParameterText(block);
     (void)libraryParameters;
 
-    if (pos + 4 > data.size()) {
+    if (pos + 4 >data.size()) {
         error = "The .PcbLib library header is truncated (no footprint count).";
         return false;
     }
     const std::uint32_t footprintCount = rdU32(data, pos);
     pos += 4;
 
-    std::vector<std::string> names;
+    std::vector<std::string>names;
     for (std::uint32_t i = 0; i < footprintCount && pos < data.size(); ++i) {
         const std::string name = readStringBlock(data, pos);
         if (!name.empty()) names.push_back(name);
@@ -459,7 +459,7 @@ bool readPcbLibrary(CompoundFile& file, Library& library, std::string& error) {
 
     // The OLE storage name is limited to 31 characters while the library keeps the full
     // footprint name, so the storage has to be matched (by name, then by position).
-    std::vector<std::string> storages;
+    std::vector<std::string>storages;
     for (const FileEntry& entry : file.root().children) {
         if (!entry.isStorage) continue;
         if (entry.name == "Library" || entry.name == "FileVersionInfo" || entry.name == "Models")
@@ -480,7 +480,7 @@ bool readPcbLibrary(CompoundFile& file, Library& library, std::string& error) {
     };
 
     // Real 3D models, shared by the footprints that refer to them.
-    const std::vector<EmbeddedModel> models = readEmbeddedModels(file);
+    const std::vector<EmbeddedModel>models = readEmbeddedModels(file);
 
     for (std::size_t index = 0; index < names.size(); ++index) {
         const std::string& name = names[index];
@@ -489,10 +489,10 @@ bool readPcbLibrary(CompoundFile& file, Library& library, std::string& error) {
         const std::string base = storageFor(name, index);
 
         // Parameters stream (PATTERN / HEIGHT / DESCRIPTION / …).
-        std::vector<std::uint8_t> parametersText = file.stream(base + "/Parameters");
+        std::vector<std::uint8_t>parametersText = file.stream(base + "/Parameters");
         if (!parametersText.empty()) {
             std::size_t parametersPos = 0;
-            std::vector<std::uint8_t> parametersBlock;
+            std::vector<std::uint8_t>parametersBlock;
             if (!readBlock(parametersText, parametersPos, parametersBlock))
                 parametersBlock = parametersText;
             footprint.parameters = parseParameterText(parametersBlock);
@@ -501,7 +501,7 @@ bool readPcbLibrary(CompoundFile& file, Library& library, std::string& error) {
             footprint.height = parseMil(valueOf(footprint.parameters, "HEIGHT"));
         }
 
-        std::vector<std::uint8_t> stream = file.stream(base + "/Data");
+        std::vector<std::uint8_t>stream = file.stream(base + "/Data");
         if (stream.empty()) {
             library.warnings.push_back("Footprint '" + name + "' has no data stream.");
             library.footprints.push_back(std::move(footprint));
@@ -525,7 +525,7 @@ bool readPcbLibrary(CompoundFile& file, Library& library, std::string& error) {
                 }
             }
         }
-        if (footprint.models.empty() && models.size() == 1 && footprint.bodyCount > 0) {
+        if (footprint.models.empty() && models.size() == 1 && footprint.bodyCount >0) {
             footprint.models = models;   // a single model library: it is the body
         }
         library.footprints.push_back(std::move(footprint));
@@ -547,14 +547,14 @@ bool readSchLibrary(CompoundFile& file, Library& library, std::string& error) {
     library.container = Container::CompoundBinary;
     library.structure = file.root().children;
 
-    std::vector<std::string> libRefs;
-    const std::vector<std::uint8_t> header = file.stream("FileHeader");
+    std::vector<std::string>libRefs;
+    const std::vector<std::uint8_t>header = file.stream("FileHeader");
     if (!header.empty()) {
         std::size_t pos = 0;
-        std::vector<std::uint8_t> headerBlock;
+        std::vector<std::uint8_t>headerBlock;
         const std::string headerText = readStringBlock(header, pos);
         if (!readBlock(header, pos = 0, headerBlock)) headerBlock = header;
-        const std::vector<Property> headerProps = parseParameterText(headerBlock);
+        const std::vector<Property>headerProps = parseParameterText(headerBlock);
         const std::string version = valueOf(headerProps, "HEADER");
         library.formatVersion = !version.empty() ? version
                                 : !headerText.empty() ? headerText
@@ -569,7 +569,7 @@ bool readSchLibrary(CompoundFile& file, Library& library, std::string& error) {
 
     // The OLE storage name is limited to 31 characters, so the library reference is the
     // human readable name while the storage name is what has to be looked up.
-    std::vector<std::string> storages;
+    std::vector<std::string>storages;
     for (const FileEntry& entry : file.root().children) {
         if (!entry.isStorage) continue;
         if (entry.name == "Library" || entry.name == "Storage" ||
@@ -580,7 +580,7 @@ bool readSchLibrary(CompoundFile& file, Library& library, std::string& error) {
 
     for (std::size_t i = 0; i < storages.size(); ++i) {
         const std::string storageName = storages[i];
-        const std::vector<std::uint8_t> stream = file.stream(storageName + "/Data");
+        const std::vector<std::uint8_t>stream = file.stream(storageName + "/Data");
         if (stream.empty()) {
             LibrarySymbol symbol;
             symbol.name = i < libRefs.size() ? libRefs[i] : storageName;
@@ -633,9 +633,9 @@ std::string asciiText(const std::vector<std::uint8_t>& bytes) {
 }
 
 void readAsciiPcbLibrary(const std::vector<std::uint8_t>& bytes, Library& library) {
-    const std::vector<std::vector<Property>> records = detail::readAsciiRecords(bytes);
+    const std::vector<std::vector<Property>>records = detail::readAsciiRecords(bytes);
 
-    std::map<int, std::size_t> byId;  // COMPONENT id -> index in library.footprints
+    std::map<int, std::size_t>byId;  // COMPONENT id ->index in library.footprints
     for (const std::vector<Property>& props : records) {
         if (!text::equalsNoCase(valueOf(props, "RECORD"), "Component")) continue;
         LibraryFootprint footprint;
@@ -697,7 +697,7 @@ void readAsciiPcbLibrary(const std::vector<std::uint8_t>& bytes, Library& librar
             arc.width = parseMil(valueOf(props, "WIDTH"));
             footprint.geometry.arcs.push_back(arc);
             ++footprint.arcCount;
-            if (arc.radius > 0.0) {
+            if (arc.radius >0.0) {
                 footprint.bounds.add(arc.cx - arc.radius, arc.cy - arc.radius);
                 footprint.bounds.add(arc.cx + arc.radius, arc.cy + arc.radius);
             }
@@ -733,7 +733,7 @@ void readAsciiPcbLibrary(const std::vector<std::uint8_t>& bytes, Library& librar
 }
 
 void readAsciiSchLibrary(const std::vector<std::uint8_t>& bytes, Library& library) {
-    const std::vector<detail::SchRecord> records = detail::readAsciiSchRecords(bytes);
+    const std::vector<detail::SchRecord>records = detail::readAsciiSchRecords(bytes);
     buildSymbols(records, library);
 
     for (std::size_t i = 0; i < library.symbols.size(); ++i) {
@@ -868,7 +868,7 @@ void applySymbolRecord(const std::vector<Property>& props, int type, LibrarySymb
             shape.startAngle = number("STARTANGLE");
             shape.endAngle = number("ENDANGLE");
             shape.width = number("WIDTH") * kSchUnit;
-            if (shape.radius > 0.0) symbol.shapes.push_back(shape);
+            if (shape.radius >0.0) symbol.shapes.push_back(shape);
             break;
         }
         case 8: {  // ellipse
@@ -901,7 +901,7 @@ void applySymbolRecord(const std::vector<Property>& props, int type, LibrarySymb
 
 /// Walks a record stream (binary SchLib symbol or ASCII library) and fills the symbols.
 void buildSymbols(const std::vector<detail::SchRecord>& records, Library& library) {
-    std::map<int, std::size_t> byIndex;
+    std::map<int, std::size_t>byIndex;
     int lastSymbol = -1;
     std::string version;
 
@@ -983,7 +983,7 @@ void buildLibraryDocument(Document& document, Library& library) {
             component.pads = footprint.geometry.pads;
             component.properties = footprint.parameters;
             for (const Pad& pad : footprint.geometry.pads) {
-                if (pad.holeSize > 0.0) ++component.throughHolePads;
+                if (pad.holeSize >0.0) ++component.throughHolePads;
             }
             component.layer = padLayerLabel(footprint.geometry.pads);
             document.components.push_back(std::move(component));
@@ -1093,7 +1093,7 @@ namespace {
 /// Shortens a name so table columns stay aligned.
 std::string ellipsize(const std::string& value, std::size_t width) {
     if (value.size() <= width) return value;
-    return value.substr(0, width > 3 ? width - 3 : 0) + "...";
+    return value.substr(0, width >3 ? width - 3 : 0) + "...";
 }
 } // namespace
 
@@ -1121,7 +1121,7 @@ std::string libraryToText(const Library& library) {
                 size << "-";
             }
             std::string description = footprint.description;
-            if (description.size() > 44) description = description.substr(0, 41) + "...";
+            if (description.size() >44) description = description.substr(0, 41) + "...";
             std::string sizeText = size.str();
             if (sizeText.size() < 13) sizeText = std::string(13 - sizeText.size(), ' ') + sizeText;
             out << std::left << std::setw(34) << ellipsize(footprint.name, 33) << std::right << std::setw(6)
@@ -1134,7 +1134,7 @@ std::string libraryToText(const Library& library) {
         for (const LibraryFootprint& footprint : library.footprints) {
             if (!footprint.models.empty()) ++withModel;
         }
-        if (withModel > 0) {
+        if (withModel >0) {
             out << "\n3D models  " << withModel << " of " << library.footprints.size()
                 << " footprint(s) carry a STEP body (Models storage)\n";
         }
@@ -1142,7 +1142,7 @@ std::string libraryToText(const Library& library) {
         for (const LibraryFootprint& footprint : library.footprints) {
             if (!partProperty(footprint.parameters, "DATASHEET").empty()) ++withDatasheet;
         }
-        if (withDatasheet > 0) {
+        if (withDatasheet >0) {
             out << "\nDatasheets\n";
             for (const LibraryFootprint& footprint : library.footprints) {
                 const std::string url = partProperty(footprint.parameters, "DATASHEET");
@@ -1158,7 +1158,7 @@ std::string libraryToText(const Library& library) {
         out << std::string(96, '-') << "\n";
         for (const LibrarySymbol& symbol : library.symbols) {
             std::string description = symbol.description;
-            if (description.size() > 44) description = description.substr(0, 41) + "...";
+            if (description.size() >44) description = description.substr(0, 41) + "...";
             out << std::left << std::setw(34) << ellipsize(symbol.name, 33) << std::right << std::setw(6)
                 << symbol.pins.size() << std::setw(7) << symbol.partCount << std::setw(8)
                 << symbol.shapes.size() << "   " << description << "\n";
@@ -1268,12 +1268,12 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
     // A multi-part symbol keeps every part in the same coordinate space, so drawing the
     // parts as they are stored would stack them on top of each other. Shift each part to
     // its own column instead, which is how a compound symbol reads in Altium's editor.
-    std::vector<int> parts;
+    std::vector<int>parts;
     for (const SymbolShape& shape : symbol.shapes) {
-        if (shape.ownerPart > 0) parts.push_back(shape.ownerPart);
+        if (shape.ownerPart >0) parts.push_back(shape.ownerPart);
     }
     for (const SymbolPin& pin : symbol.pinGeometry) {
-        if (pin.ownerPart > 0) parts.push_back(pin.ownerPart);
+        if (pin.ownerPart >0) parts.push_back(pin.ownerPart);
     }
     std::sort(parts.begin(), parts.end());
     parts.erase(std::unique(parts.begin(), parts.end()), parts.end());
@@ -1284,7 +1284,7 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
     };
 
     // Horizontal extent of every part (body rectangles and pins), used for the columns.
-    std::map<int, std::pair<double, double>> extent;
+    std::map<int, std::pair<double, double>>extent;
     auto touchX = [&extent](int part, double x) {
         auto it = extent.find(part);
         if (it == extent.end()) {
@@ -1306,7 +1306,7 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
         touchX(part, pin.x + (pin.rotation == 180 ? -pin.length : pin.length));
     }
 
-    std::map<int, double> shiftX;
+    std::map<int, double>shiftX;
     {
         const double columnGap = 900.0;
         double cursor = 0.0;
@@ -1317,22 +1317,22 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
         }
     }
 
-    const std::vector<SymbolShape> shapes = [&] {
-        std::vector<SymbolShape> shifted = symbol.shapes;
+    const std::vector<SymbolShape>shapes = [&] {
+        std::vector<SymbolShape>shifted = symbol.shapes;
         for (SymbolShape& shape : shifted) {
             const double offset = shiftX[partOf(shape.ownerPart)];
             for (Point& point : shape.points) point.x += offset;
         }
         return shifted;
     }();
-    const std::vector<SymbolPin> pins = [&] {
-        std::vector<SymbolPin> shifted = symbol.pinGeometry;
+    const std::vector<SymbolPin>pins = [&] {
+        std::vector<SymbolPin>shifted = symbol.pinGeometry;
         for (SymbolPin& pin : shifted) pin.x += shiftX[partOf(pin.ownerPart)];
         return shifted;
     }();
 
     for (const SymbolShape& shape : shapes) {
-        const double stroke = shape.width > 0.0 ? shape.width : 8.0;
+        const double stroke = shape.width >0.0 ? shape.width : 8.0;
         switch (shape.kind) {
             case SymbolShape::Kind::Line:
                 if (shape.points.size() >= 2)
@@ -1412,7 +1412,7 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
             case SymbolShape::Kind::Text:
                 if (!shape.points.empty())
                     addText(shape.points[0].x, shape.points[0].y,
-                            shape.text, shape.textHeight > 0.0 ? shape.textHeight : 60.0);
+                            shape.text, shape.textHeight >0.0 ? shape.textHeight : 60.0);
                 break;
         }
     }
@@ -1427,7 +1427,7 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
         double minX = 0.0, maxX = 0.0, minY = 0.0, maxY = 0.0;
         bool valid = false;
     };
-    std::map<int, BodyRect> bodies;
+    std::map<int, BodyRect>bodies;
     for (const SymbolShape& shape : shapes) {
         if (shape.kind != SymbolShape::Kind::Rectangle &&
             shape.kind != SymbolShape::Kind::RoundRectangle) {
@@ -1482,13 +1482,13 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
             double nameX = pin.x;
             double nameY = pin.y - pinText * 0.35;
             int anchor = 1;  // left aligned
-            if (dx > 0.0) {           // body is to the left of the pin: grow leftwards
+            if (dx >0.0) {           // body is to the left of the pin: grow leftwards
                 nameX = pin.x - 24.0;
                 anchor = 2;
             } else if (dx < 0.0) {    // body is to the right: grow rightwards
                 nameX = pin.x + 24.0;
                 anchor = 1;
-            } else if (dy > 0.0) {
+            } else if (dy >0.0) {
                 nameY = pin.y - 30.0 - pinText * 0.5;
                 anchor = 0;
             } else {
@@ -1506,7 +1506,7 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
                                                   : nameX - (bodyCenterX + 40.0);
                 const std::size_t maxChars =
                     static_cast<std::size_t>(std::max(0.0, usable / (pinText * 0.62)));
-                if (name.size() > maxChars && maxChars > 3)
+                if (name.size() >maxChars && maxChars >3)
                     name = name.substr(0, maxChars - 3) + "...";
             }
             addTextAligned(nameX, nameY, name, pinText, anchor, 0x171b21);
@@ -1514,7 +1514,7 @@ Document symbolDocument(const LibrarySymbol& symbol, const std::string& fileName
     }
 
     // Label each column of a compound symbol, so it is obvious which part is which.
-    if (parts.size() > 1) {
+    if (parts.size() >1) {
         for (const int part : parts) {
             const auto it = bodies.find(part);
             if (it == bodies.end() || !it->second.valid) continue;
@@ -1597,14 +1597,14 @@ void padExtent(const std::vector<Pad>& pads, double& width, double& height) {
         minY = std::min(minY, pad.y - pad.height / 2.0);
         maxY = std::max(maxY, pad.y + pad.height / 2.0);
     }
-    width = maxX > minX ? maxX - minX : 0.0;
-    height = maxY > minY ? maxY - minY : 0.0;
+    width = maxX >minX ? maxX - minX : 0.0;
+    height = maxY >minY ? maxY - minY : 0.0;
 }
 
 /// How many different pad numbers a pad group has ("1","2","3"), not how many rectangles:
 /// a library footprint often splits one pad into a copper and a paste object.
 std::size_t uniquePadNumbers(const std::vector<Pad>& pads) {
-    std::vector<std::string> names;
+    std::vector<std::string>names;
     for (const Pad& pad : pads) {
         if (pad.designator.empty()) continue;
         if (std::find(names.begin(), names.end(), pad.designator) == names.end()) {
@@ -1625,15 +1625,15 @@ void padCentreExtent(const std::vector<Pad>& pads, double& width, double& height
         minY = std::min(minY, pad.y);
         maxY = std::max(maxY, pad.y);
     }
-    width = maxX > minX ? maxX - minX : 0.0;
-    height = maxY > minY ? maxY - minY : 0.0;
+    width = maxX >minX ? maxX - minX : 0.0;
+    height = maxY >minY ? maxY - minY : 0.0;
 }
 
 /// Number of pads that actually have a hole (a through-hole part never matches an SMD one).
 std::size_t drilledPadCount(const std::vector<Pad>& pads) {
     std::size_t drilled = 0;
     for (const Pad& pad : pads) {
-        if (pad.holeSize > 0.0) ++drilled;
+        if (pad.holeSize >0.0) ++drilled;
     }
     return drilled;
 }
@@ -1661,14 +1661,14 @@ const LibraryFootprint* matchByGeometry(const Component& component, const Librar
     double width = 0.0, height = 0.0;
     padCentreExtent(component.pads, width, height);
     // A single pad has no spread at all; such a footprint cannot be told apart from another.
-    if (wantedPads > 1 && width <= 0.0 && height <= 0.0) return nullptr;
+    if (wantedPads >1 && width <= 0.0 && height <= 0.0) return nullptr;
     double copperWidth = 0.0, copperHeight = 0.0;
     padExtent(component.pads, copperWidth, copperHeight);
     const double hole = largestHole(component.pads);
 
     auto relative = [](double a, double b) {
         const double scale = std::max(a, b);
-        return scale > 0.0 ? std::fabs(a - b) / scale : 0.0;
+        return scale >0.0 ? std::fabs(a - b) / scale : 0.0;
     };
 
     const LibraryFootprint* best = nullptr;
@@ -1710,7 +1710,7 @@ const LibraryFootprint* matchByGeometry(const Component& component, const Librar
     }
     // Two footprints that fit about equally well mean the answer is not clear: attach
     // nothing. The winner also has to be a genuinely good fit on its own.
-    if (best == nullptr || bestScore > 0.15 || secondScore - bestScore < 0.02) return nullptr;
+    if (best == nullptr || bestScore >0.15 || secondScore - bestScore < 0.02) return nullptr;
     return best;
 }
 
@@ -1726,7 +1726,7 @@ std::size_t attachModels(Document& document, const Library& library) {
         if (needle.empty()) continue;
 
         const LibraryFootprint* match = nullptr;
-        auto matchByName = [&library](const std::string& key) -> const LibraryFootprint* {
+        auto matchByName = [&library](const std::string& key) ->const LibraryFootprint* {
             if (key.empty()) return nullptr;
             for (const LibraryFootprint& footprint : library.footprints) {
                 if (fingerprint(footprint.name) == key) return &footprint;
@@ -1754,8 +1754,8 @@ std::size_t attachModels(Document& document, const Library& library) {
             int candidates = 0;
             for (const LibraryFootprint& footprint : library.footprints) {
                 const std::string candidate = fingerprint(footprint.name);
-                const std::string& longer = candidate.size() > needle.size() ? candidate : needle;
-                const std::string& shorter = candidate.size() > needle.size() ? needle : candidate;
+                const std::string& longer = candidate.size() >needle.size() ? candidate : needle;
+                const std::string& shorter = candidate.size() >needle.size() ? needle : candidate;
                 if (shorter.size() >= 6 && longer.find(shorter) != std::string::npos) {
                     candidateMatch = &footprint;
                     ++candidates;
@@ -1807,7 +1807,7 @@ std::string partProperty(const std::vector<Property>& parameters, const std::str
 namespace {
 
 bool isBundlePath(const std::string& path) {
-    return path.size() > 8 && fingerprint(path.substr(path.size() - 8)) == "pcbvlib";
+    return path.size() >8 && fingerprint(path.substr(path.size() - 8)) == "pcbvlib";
 }
 
 void addBundlesIn(const std::filesystem::path& folder, std::vector<std::string>& out) {
@@ -1840,8 +1840,8 @@ std::filesystem::path executableFolder() {
 
 } // namespace
 
-std::vector<std::string> findLibraryBundles(const std::string& boardPath) {
-    std::vector<std::string> files;
+std::vector<std::string>findLibraryBundles(const std::string& boardPath) {
+    std::vector<std::string>files;
     const std::filesystem::path board(boardPath);
     const std::filesystem::path folder = board.has_parent_path() ? board.parent_path()
                                                                  : std::filesystem::current_path();
@@ -1853,7 +1853,7 @@ std::vector<std::string> findLibraryBundles(const std::string& boardPath) {
     }
     std::error_code error;
     addBundlesIn(std::filesystem::current_path(error) / "library", files);
-    // build/pcbv-gui -> ../library, i.e. the library that is shipped in the repository.
+    // build/pcbv-gui ->../library, i.e. the library that is shipped in the repository.
     const std::filesystem::path exeFolder = executableFolder();
     if (!exeFolder.empty()) {
         addBundlesIn(exeFolder / "library", files);
@@ -1876,7 +1876,7 @@ LibraryAttachment attachLibraryFolder(Document& document, const std::string& boa
         }
         if (outcome.library.footprints.empty()) continue;   // a symbol library: nothing 3D
         const std::size_t matched = attachModels(document, outcome.library);
-        if (matched > 0) {
+        if (matched >0) {
             ++result.libraries;
             result.parts += matched;
             result.files.push_back(path);

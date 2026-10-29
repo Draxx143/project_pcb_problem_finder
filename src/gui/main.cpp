@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     window.show();
 
     const QStringList args = app.arguments();
-    if (args.size() > 1) {
+    if (args.size() >1) {
         const QString path = args.at(1);
         if (!path.isEmpty() && !path.startsWith('-')) window.openDocument(path);
     }

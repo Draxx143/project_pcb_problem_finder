@@ -42,8 +42,8 @@ std::string unescapeValue(const std::string& text) {
 /// A length such as "10mil", "2.54mm" or "10" (mil).
 double parseLength(const std::string& text) {
     if (text.empty()) return 0.0;
-    const bool mm = text.size() > 2 && text.compare(text.size() - 2, 2, "mm") == 0;
-    const bool mil = text.size() > 3 && text.compare(text.size() - 3, 3, "mil") == 0;
+    const bool mm = text.size() >2 && text.compare(text.size() - 2, 2, "mm") == 0;
+    const bool mil = text.size() >3 && text.compare(text.size() - 3, 3, "mil") == 0;
     const std::size_t end = mm ? text.size() - 2 : (mil ? text.size() - 3 : text.size());
     std::string number = text.substr(0, end);
     const double value = std::atof(number.c_str());
@@ -52,7 +52,7 @@ double parseLength(const std::string& text) {
 
 struct Record {
     std::string name;
-    std::map<std::string, std::string> fields;
+    std::map<std::string, std::string>fields;
 
     std::string text(const std::string& key) const {
         const auto it = fields.find(key);
@@ -109,8 +109,8 @@ std::string shapeKindName(SymbolShape::Kind kind) {
 }
 
 /// "x1,y1;x2,y2" → points, in mil.
-std::vector<Point> parsePoints(const std::string& text) {
-    std::vector<Point> points;
+std::vector<Point>parsePoints(const std::string& text) {
+    std::vector<Point>points;
     std::size_t pos = 0;
     while (pos < text.size()) {
         const std::size_t end = text.find(';', pos);
@@ -133,7 +133,7 @@ std::string formatPoints(const std::vector<Point>& points) {
     std::ostringstream out;
     out << std::setprecision(10);
     for (std::size_t i = 0; i < points.size(); ++i) {
-        if (i > 0) out << ';';
+        if (i >0) out << ';';
         out << points[i].x << ',' << points[i].y;
     }
     return out.str();
@@ -196,12 +196,12 @@ struct PartBuild {
     std::string description;
     std::string prefix;
     int subParts = 1;
-    std::vector<Property> parameters;
+    std::vector<Property>parameters;
     PcbGeometry geometry;
-    std::vector<EmbeddedModel> models;
-    std::vector<Pin> pins;
-    std::vector<SymbolPin> pinGeometry;
-    std::vector<SymbolShape> shapes;
+    std::vector<EmbeddedModel>models;
+    std::vector<Pin>pins;
+    std::vector<SymbolPin>pinGeometry;
+    std::vector<SymbolShape>shapes;
 };
 
 } // namespace
@@ -222,9 +222,9 @@ bool readBundle(const std::string& text, Library& library, std::string& error) {
     library.formatVersion = "PCB Viewer library bundle v1";
 
     std::string type = "PCB";
-    std::vector<PartBuild> parts;
+    std::vector<PartBuild>parts;
 
-    auto partAt = [&parts](std::size_t index) -> PartBuild& {
+    auto partAt = [&parts](std::size_t index) ->PartBuild& {
         while (parts.size() <= index) parts.push_back(PartBuild());
         return parts[index];
     };
@@ -282,7 +282,7 @@ bool readBundle(const std::string& text, Library& library, std::string& error) {
             pad.holeSize = record.number("HOLE");
             pad.rotation = record.number("ROTATION");
             pad.layer = record.integer("LAYER", 1);
-            pad.plated = pad.holeSize > 0.0;
+            pad.plated = pad.holeSize >0.0;
             pad.componentIndex = static_cast<int>(index);
             part.geometry.pads.push_back(pad);
         } else if (record.name == "TRACK") {
@@ -457,16 +457,16 @@ std::string writeBundle(const Library& library) {
             for (const SymbolShape& shape : symbol.shapes) {
                 out << "|SHAPE|PART=" << index << "|KIND=" << shapeKindName(shape.kind)
                     << "|POINTS=" << formatPoints(shape.points);
-                if (shape.radius > 0.0) out << "|RADIUS=" << mil(shape.radius);
-                if (shape.secondaryRadius > 0.0) out << "|RADIUS2=" << mil(shape.secondaryRadius);
+                if (shape.radius >0.0) out << "|RADIUS=" << mil(shape.radius);
+                if (shape.secondaryRadius >0.0) out << "|RADIUS2=" << mil(shape.secondaryRadius);
                 if (shape.kind == SymbolShape::Kind::Arc) {
                     out << "|START=" << shape.startAngle << "|END=" << shape.endAngle;
                 }
-                if (shape.width > 0.0) out << "|WIDTH=" << mil(shape.width);
+                if (shape.width >0.0) out << "|WIDTH=" << mil(shape.width);
                 if (shape.fill != 0) out << "|FILL=" << shape.fill;
                 if (!shape.text.empty()) out << "|TEXT=" << escapeValue(shape.text);
-                if (shape.textHeight > 0.0) out << "|HEIGHT=" << mil(shape.textHeight);
-                if (shape.ownerPart > 0) out << "|PARTNUM=" << shape.ownerPart;
+                if (shape.textHeight >0.0) out << "|HEIGHT=" << mil(shape.textHeight);
+                if (shape.ownerPart >0) out << "|PARTNUM=" << shape.ownerPart;
                 out << "|\n";
             }
         }

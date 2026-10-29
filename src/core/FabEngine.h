@@ -18,8 +18,8 @@ struct SchematicPcbCheckResult {
     bool valid = true;
     int schematicComponents = 0;
     int pcbComponents = 0;
-    std::vector<std::string> missingOnPcb;
-    std::vector<std::string> extraOnPcb;
+    std::vector<std::string>missingOnPcb;
+    std::vector<std::string>extraOnPcb;
     std::string summary;
 };
 

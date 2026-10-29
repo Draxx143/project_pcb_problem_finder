@@ -43,7 +43,7 @@ double length(const Vec3& a) { return std::sqrt(dot(a, a)); }
 
 Vec3 normalised(const Vec3& a) {
     const double len = length(a);
-    return len > 1e-12 ? a * (1.0 / len) : Vec3{0.0, 0.0, 1.0};
+    return len >1e-12 ? a * (1.0 / len) : Vec3{0.0, 0.0, 1.0};
 }
 
 struct Vec2 {
@@ -64,17 +64,17 @@ std::uint32_t rgb(int r, int g, int b) {
 }
 
 std::uint32_t mixColor(std::uint32_t a, std::uint32_t b, double t) {
-    const double ar = static_cast<double>((a >> 16) & 0xFF);
-    const double ag = static_cast<double>((a >> 8) & 0xFF);
+    const double ar = static_cast<double>((a >>16) & 0xFF);
+    const double ag = static_cast<double>((a >>8) & 0xFF);
     const double ab = static_cast<double>(a & 0xFF);
-    const double br = static_cast<double>((b >> 16) & 0xFF);
-    const double bg = static_cast<double>((b >> 8) & 0xFF);
+    const double br = static_cast<double>((b >>16) & 0xFF);
+    const double bg = static_cast<double>((b >>8) & 0xFF);
     const double bb = static_cast<double>(b & 0xFF);
     return rgb(ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t);
 }
 
 std::uint32_t scaleColor(std::uint32_t c, double factor) {
-    return rgb(((c >> 16) & 0xFF) * factor, ((c >> 8) & 0xFF) * factor, (c & 0xFF) * factor);
+    return rgb(((c >>16) & 0xFF) * factor, ((c >>8) & 0xFF) * factor, (c & 0xFF) * factor);
 }
 
 // ---------------------------------------------------------------------------
@@ -82,7 +82,7 @@ std::uint32_t scaleColor(std::uint32_t c, double factor) {
 // ---------------------------------------------------------------------------
 
 struct Face {
-    std::vector<Vec3> points;
+    std::vector<Vec3>points;
     std::uint32_t color = 0xFFFFFF;
     double alpha = 1.0;     ///< 1 = opaque, less = blended (shadows)
     double metal = 0.0;     ///< 0..1 specular strength
@@ -90,7 +90,7 @@ struct Face {
 };
 
 struct Scene {
-    std::vector<Face> faces;
+    std::vector<Face>faces;
 
     void addPolygon(const std::vector<Vec3>& points, std::uint32_t color, double metal = 0.0,
                     double alpha = 1.0) {
@@ -122,7 +122,7 @@ struct Scene {
         const double rad = rotationDeg * kPi / 180.0;
         const double c = std::cos(rad), s = std::sin(rad);
         const double hw = width / 2.0, hh = height / 2.0;
-        std::vector<Vec3> points;
+        std::vector<Vec3>points;
         for (const Vec2& corner : {Vec2{-hw, -hh}, Vec2{hw, -hh}, Vec2{hw, hh}, Vec2{-hw, hh}}) {
             points.push_back(Vec3{cx + corner.x * c - corner.y * s, cy + corner.x * s + corner.y * c, z});
         }
@@ -151,7 +151,7 @@ struct Scene {
     void disc(double cx, double cy, double radius, double z, int steps, std::uint32_t color,
               double metal = 0.0) {
         if (radius <= 1e-9) return;
-        std::vector<Vec3> points;
+        std::vector<Vec3>points;
         points.reserve(static_cast<std::size_t>(steps));
         for (int i = 0; i < steps; ++i) {
             const double angle = 2.0 * kPi * static_cast<double>(i) / steps;
@@ -177,13 +177,13 @@ struct Scene {
                      std::uint32_t top, std::uint32_t side, std::uint32_t bottom,
                      double metal = 0.0) {
         if (radius <= 1e-9 || z1 - z0 <= 1e-9) return;
-        std::vector<Vec3> ring;
+        std::vector<Vec3>ring;
         ring.reserve(static_cast<std::size_t>(steps));
         for (int i = 0; i < steps; ++i) {
             const double angle = 2.0 * kPi * static_cast<double>(i) / steps;
             ring.push_back(Vec3{cx + std::cos(angle) * radius, cy + std::sin(angle) * radius, 0.0});
         }
-        std::vector<Vec3> topRing, bottomRing;
+        std::vector<Vec3>topRing, bottomRing;
         for (const Vec3& point : ring) {
             topRing.push_back(Vec3{point.x, point.y, z1});
             bottomRing.push_back(Vec3{point.x, point.y, z0});
@@ -233,7 +233,7 @@ Camera makeCamera(double yawDeg, double elevationDeg) {
     camera.forward = normalised(towards * -1.0);
 
     Vec3 worldUp{0.0, 0.0, 1.0};
-    if (std::fabs(dot(camera.forward, worldUp)) > 0.999) worldUp = Vec3{0.0, 1.0, 0.0};
+    if (std::fabs(dot(camera.forward, worldUp)) >0.999) worldUp = Vec3{0.0, 1.0, 0.0};
     camera.right = normalised(cross(camera.forward, worldUp));
     camera.up = normalised(cross(camera.right, camera.forward));
     return camera;
@@ -247,8 +247,8 @@ struct Renderer {
     Camera camera;
     int width = 0;
     int height = 0;
-    std::vector<std::uint32_t> color;
-    std::vector<double> depth;
+    std::vector<std::uint32_t>color;
+    std::vector<double>depth;
     Vec3 light{0.0, 0.0, 1.0};
     Vec3 toEye{0.0, 0.0, 1.0};
 
@@ -283,17 +283,17 @@ struct Renderer {
         double k = 0.32 + 0.24 * sky + 0.58 * diffuse;
         const Vec3 half = normalised(light + toEye);
         const double specular =
-            face.metal > 0.0 ? std::pow(std::max(0.0, dot(normal, half)), face.shininess) * face.metal : 0.0;
+            face.metal >0.0 ? std::pow(std::max(0.0, dot(normal, half)), face.shininess) * face.metal : 0.0;
 
-        const double r = ((face.color >> 16) & 0xFF) * k + 235.0 * specular;
-        const double g = ((face.color >> 8) & 0xFF) * k + 235.0 * specular;
+        const double r = ((face.color >>16) & 0xFF) * k + 235.0 * specular;
+        const double g = ((face.color >>8) & 0xFF) * k + 235.0 * specular;
         const double b = (face.color & 0xFF) * k + 240.0 * specular;
         const std::uint32_t shaded = rgb(r, g, b);
 
         // Project the polygon and derive the depth plane (all faces are planar).
-        std::vector<Vec2> screen;
+        std::vector<Vec2>screen;
         screen.reserve(face.points.size());
-        std::vector<double> points;
+        std::vector<double>points;
         points.reserve(face.points.size());
         double minX = 1e18, maxX = -1e18, minY = 1e18, maxY = -1e18;
         for (const Vec3& point : face.points) {
@@ -327,16 +327,16 @@ struct Renderer {
         const int yStart = std::max(0, static_cast<int>(std::floor(minY)));
         const int yEnd = std::min(height - 1, static_cast<int>(std::ceil(maxY)));
         const int xLimit = width;
-        if (yStart > yEnd) return;
+        if (yStart >yEnd) return;
 
         for (int y = yStart; y <= yEnd; ++y) {
             const double scan = y + 0.5;
-            std::vector<double> crossings;
+            std::vector<double>crossings;
             crossings.reserve(screen.size());
             for (std::size_t i = 0; i < screen.size(); ++i) {
                 const Vec2& a = screen[i];
                 const Vec2& b = screen[(i + 1) % screen.size()];
-                if ((a.y <= scan && b.y > scan) || (b.y <= scan && a.y > scan)) {
+                if ((a.y <= scan && b.y >scan) || (b.y <= scan && a.y >scan)) {
                     const double t = (scan - a.y) / (b.y - a.y);
                     crossings.push_back(a.x + t * (b.x - a.x));
                 }
@@ -391,8 +391,8 @@ struct Renderer {
                             static_cast<std::size_t>(y * factor + sy) * static_cast<std::size_t>(width) +
                             static_cast<std::size_t>(x * factor + sx);
                         const std::uint32_t c = color[index];
-                        r += (c >> 16) & 0xFF;
-                        g += (c >> 8) & 0xFF;
+                        r += (c >>16) & 0xFF;
+                        g += (c >>8) & 0xFF;
                         b += c & 0xFF;
                     }
                 }
@@ -417,7 +417,7 @@ bool isBottomSilk(int layer) { return layer == 34 || layer == 36 || layer == 38;
 struct BoardFrame {
     double centreX = 0.0;   // mil
     double centreY = 0.0;
-    std::pair<double, double> toMm(double milX, double milY) const {
+    std::pair<double, double>toMm(double milX, double milY) const {
         return {(milX - centreX) * kMilToMm, (milY - centreY) * kMilToMm};
     }
 };
@@ -514,9 +514,9 @@ BodyPlan planBody(const Component& component) {
             plan.maxY = middle + 0.06;
         }
         plan.chip = true;
-        plan.height = component.height > 0.0 ? component.height * kMilToMm : 0.55;
+        plan.height = component.height >0.0 ? component.height * kMilToMm : 0.55;
         // A tall, fully through-hole two pin part is a can (electrolytic capacitor).
-        if (allThroughHole && std::hypot(spanX, spanY) > 1.4 && plan.height > 1.6) {
+        if (allThroughHole && std::hypot(spanX, spanY) >1.4 && plan.height >1.6) {
             plan.cylinder = true;
             plan.radius = std::max(0.6, std::hypot(spanX, spanY) * 0.42);
         }
@@ -528,7 +528,7 @@ BodyPlan planBody(const Component& component) {
         plan.maxX = maxX - insetX;
         plan.minY = minY + insetY;
         plan.maxY = maxY - insetY;
-        plan.height = component.height > 0.0 ? component.height * kMilToMm : 1.0;
+        plan.height = component.height >0.0 ? component.height * kMilToMm : 1.0;
     }
     plan.height = std::clamp(plan.height, 0.25, 12.0);
     return plan;
@@ -546,7 +546,7 @@ BodyPlan planBody(const Component& component) {
 //   * DZ lifts it by the offset stored with the model,
 //   * the component rotation turns it on the board, exactly like the pads beside it.
 struct PlacedModel {
-    std::vector<StepTriangle> triangles;   ///< in the component frame (mm, Z = 0 on the board)
+    std::vector<StepTriangle>triangles;   ///< in the component frame (mm, Z = 0 on the board)
     double minX = 0.0, maxX = 0.0, minY = 0.0, maxY = 0.0;
     double height = 0.0;
     bool hasColor = false;                 ///< the model declared its own colour
@@ -592,7 +592,7 @@ PlacedModel placeModel(const StepMesh& mesh, const EmbeddedModel& model) {
     PlacedModel placed;
     if (!mesh.valid()) return placed;
 
-    std::vector<StepTriangle> rotated = mesh.triangles;
+    std::vector<StepTriangle>rotated = mesh.triangles;
     double minX = 1e18, minY = 1e18, minZ = 1e18;
     double maxX = -1e18, maxY = -1e18, maxZ = -1e18;
     for (StepTriangle& triangle : rotated) {
@@ -655,11 +655,11 @@ const PlacedModel* modelFor(const Document& document, int index) {
     mix(&model.dy, sizeof(model.dy));
     mix(&model.dz, sizeof(model.dz));
 
-    static std::vector<std::pair<std::uint64_t, PlacedModel>> cache;
+    static std::vector<std::pair<std::uint64_t, PlacedModel>>cache;
     for (const auto& entry : cache) {
         if (entry.first == key) return entry.second.valid() ? &entry.second : nullptr;
     }
-    if (cache.size() > 32) cache.erase(cache.begin(), cache.begin() + 8);
+    if (cache.size() >32) cache.erase(cache.begin(), cache.begin() + 8);
 
     PlacedModel placed;
     StepMesh mesh;
@@ -685,7 +685,7 @@ BoardFrame boardFrame(const Document& document) {
         minY = document.bounds.minY;
         maxY = document.bounds.maxY;
     }
-    if (minX > maxX) {
+    if (minX >maxX) {
         frame.centreX = frame.centreY = 0.0;
         return frame;
     }
@@ -694,9 +694,9 @@ BoardFrame boardFrame(const Document& document) {
     return frame;
 }
 
-std::vector<std::pair<double, double>> boardOutlineMm(const Document& document,
+std::vector<std::pair<double, double>>boardOutlineMm(const Document& document,
                                                       const BoardFrame& frame) {
-    std::vector<std::pair<double, double>> outline;
+    std::vector<std::pair<double, double>>outline;
     if (document.geometry.outline.size() >= 3) {
         outline.reserve(document.geometry.outline.size());
         for (const Point& point : document.geometry.outline) outline.push_back(frame.toMm(point.x, point.y));
@@ -737,7 +737,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
     palette.padEdge = scaleColor(palette.pad, 0.55);
 
     const BoardFrame frame = boardFrame(document);
-    const std::vector<std::pair<double, double>> outline = boardOutlineMm(document, frame);
+    const std::vector<std::pair<double, double>>outline = boardOutlineMm(document, frame);
     if (outline.size() < 3) return empty;
 
     const double topZ = kThicknessMm / 2.0;
@@ -750,7 +750,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
 
     // --- board slab ---------------------------------------------------------
     {
-        std::vector<Vec3> top, bottom;
+        std::vector<Vec3>top, bottom;
         for (const auto& point : outline) {
             top.push_back(Vec3{point.first, point.second, topZ});
             bottom.push_back(Vec3{point.first, point.second, bottomZ});
@@ -810,7 +810,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
             const double x = arc.cx + std::cos(angle) * arc.radius;
             const double y = arc.cy + std::sin(angle) * arc.radius;
             const auto point = frame.toMm(x, y);
-            if (i > 0) {
+            if (i >0) {
                 scene.addSegment(previous.x, previous.y, point.first, point.second, width, z, colour);
             }
             previous = Vec2{point.first, point.second};
@@ -828,7 +828,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
         const double z = isBottomCopper(layer) ? bottomZ - 0.008 : (silk ? silkZ : copperZ);
         const std::uint32_t colour = silk ? palette.silk
                                           : (isBottomCopper(layer) ? palette.copperBottom : palette.copperTop);
-        std::vector<Vec3> points;
+        std::vector<Vec3>points;
         points.reserve(region.outline.size());
         for (const Point& point : region.outline) {
             const auto mm = frame.toMm(point.x, point.y);
@@ -860,7 +860,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
         const auto centre = frame.toMm(pad.x, pad.y);
         const double width = std::max(pad.width * kMilToMm, 0.05);
         const double height = std::max(pad.height * kMilToMm, 0.05);
-        const bool round = pad.holeSize > 0.0 && std::fabs(width - height) < std::max(width, height) * 0.15;
+        const bool round = pad.holeSize >0.0 && std::fabs(width - height) < std::max(width, height) * 0.15;
         // A thin darker ring separates the bare metal from the mask.
         const double ringZ = z - 0.003;
         if (round) {
@@ -872,7 +872,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
             scene.addRotatedRect(centre.first, centre.second, width, height, pad.rotation, z,
                                  palette.pad, 0.7);
         }
-        if (withHole && pad.holeSize > 0.0) {
+        if (withHole && pad.holeSize >0.0) {
             scene.disc(centre.first, centre.second, pad.holeSize * kMilToMm / 2.0,
                        top ? z + 0.004 : z - 0.004, 16, palette.hole);
         }
@@ -880,7 +880,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
 
     if (options.pads) {
         for (const Pad& pad : document.geometry.pads) {
-            const bool throughHole = pad.holeSize > 0.0;
+            const bool throughHole = pad.holeSize >0.0;
             const bool top = throughHole || pad.layer == 1 || pad.layer == 74 ||
                              (!isBottomCopper(pad.layer) && pad.layer != 0);
             const bool bottom = throughHole || isBottomCopper(pad.layer);
@@ -891,7 +891,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
             const auto centre = frame.toMm(via.x, via.y);
             scene.disc(centre.first, centre.second, std::max(via.diameter, 10.0) * kMilToMm / 2.0,
                        topZ + 0.012, 16, palette.pad, 0.6);
-            if (via.hole > 0.0) {
+            if (via.hole >0.0) {
                 scene.disc(centre.first, centre.second, via.hole * kMilToMm / 2.0, topZ + 0.016, 12,
                            palette.hole);
             }
@@ -945,7 +945,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
                 const double brightness = (placed->colorR + placed->colorG + placed->colorB) / 3.0;
                 const double spread = std::max({placed->colorR, placed->colorG, placed->colorB}) -
                                       std::min({placed->colorR, placed->colorG, placed->colorB});
-                metal = (spread < 0.12 && brightness > 0.45) ? 0.55 : 0.10;   // metal can / tab
+                metal = (spread < 0.12 && brightness >0.45) ? 0.55 : 0.10;   // metal can / tab
             }
             for (const StepTriangle& triangle : placed->triangles) {
                 scene.addPolygon({toWorld(triangle.a), toWorld(triangle.b), toWorld(triangle.c)},
@@ -990,7 +990,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
                     alongX ? (plan.maxX - plan.minX) * 0.22 : (plan.maxY - plan.minY) * 0.22;
                 for (int side = 0; side < 2; ++side) {
                     const double signSide = side == 0 ? -1.0 : 1.0;
-                    std::vector<Vec3> top4;
+                    std::vector<Vec3>top4;
                     if (alongX) {
                         const double x = signSide < 0 ? plan.minX : plan.maxX - capWidth;
                         top4 = {localToWorld(x, plan.minY, z1 + 0.001), localToWorld(x + capWidth, plan.minY, z1 + 0.001),
@@ -1019,7 +1019,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
             const double dy = -light.y / std::max(light.z, 0.2) * drop;
             const double rad = component.rotation * kPi / 180.0;
             const double c = std::cos(rad), s = std::sin(rad);
-            std::vector<Vec3> shadow;
+            std::vector<Vec3>shadow;
             for (const Vec2& local : {Vec2{minX, minY}, Vec2{maxX, minY},
                                       Vec2{maxX, maxY}, Vec2{minX, maxY}}) {
                 shadow.push_back(Vec3{centre.first + local.x * c - local.y * s + dx,
@@ -1043,7 +1043,7 @@ ThreeDImage render3D(const Document& document, const BoardRenderOptions& options
             maxY = std::max(maxY, y);
         }
     }
-    if (minX > maxX) return empty;
+    if (minX >maxX) return empty;
 
     const int factor = std::clamp(view.supersample, 1, 3);
     const int outWidth = std::max(1, view.width);
@@ -1105,13 +1105,13 @@ std::string threeDToBmp(const ThreeDImage& image) {
     out.reserve(fileSize + 16);
     auto put16 = [&out](std::uint32_t value) {
         out.push_back(static_cast<char>(value & 0xFF));
-        out.push_back(static_cast<char>((value >> 8) & 0xFF));
+        out.push_back(static_cast<char>((value >>8) & 0xFF));
     };
     auto put32 = [&out](std::uint32_t value) {
         out.push_back(static_cast<char>(value & 0xFF));
-        out.push_back(static_cast<char>((value >> 8) & 0xFF));
-        out.push_back(static_cast<char>((value >> 16) & 0xFF));
-        out.push_back(static_cast<char>((value >> 24) & 0xFF));
+        out.push_back(static_cast<char>((value >>8) & 0xFF));
+        out.push_back(static_cast<char>((value >>16) & 0xFF));
+        out.push_back(static_cast<char>((value >>24) & 0xFF));
     };
 
     out.push_back('B');
@@ -1136,8 +1136,8 @@ std::string threeDToBmp(const ThreeDImage& image) {
         for (int x = 0; x < image.width; ++x) {
             const std::uint32_t c = image.at(x, y);
             out.push_back(static_cast<char>(c & 0xFF));
-            out.push_back(static_cast<char>((c >> 8) & 0xFF));
-            out.push_back(static_cast<char>((c >> 16) & 0xFF));
+            out.push_back(static_cast<char>((c >>8) & 0xFF));
+            out.push_back(static_cast<char>((c >>16) & 0xFF));
         }
         for (int i = 0; i < padding; ++i) out.push_back('\0');
     }
