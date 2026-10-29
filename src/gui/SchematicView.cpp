@@ -179,7 +179,7 @@ void SchematicView::paintEvent(QPaintEvent*) {
         const bool isHovered  = (sym.compIndex == hoveredIndex_);
 
         // Pin leads
-        const int pinCount = std::max(2, c.pins >0 ? c.pins : 2);
+        const int pinCount = std::max(2, !c.pins.empty() ? static_cast<int>(c.pins.size()) : 2);
         painter.setPen(QPen(QColor(180, 190, 205), 2.0));
         painter.drawLine(QPointF(sym.bodyRect.left(), sym.leftPin.y()), sym.leftPin);
         painter.drawLine(QPointF(sym.bodyRect.right(), sym.rightPin.y()), sym.rightPin);
