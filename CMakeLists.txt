@@ -70,7 +70,8 @@ endif()
 # Command line tool (always built)
 # ---------------------------------------------------------------------------
 add_executable(pcbv-cli src/cli/main.cpp)
-target_link_libraries(pcbv-cli PRIVATE pcbv_core)
+target_link_libraries(circuitguard_pro PRIVATE ngspice Qt5Core Qt5Gui Qt5Widgets Qt5Network)
+#pcbv-cli PRIVATE pcbv_core)
 
 # ---------------------------------------------------------------------------
 # Qt6 GUI (optional)
@@ -90,7 +91,8 @@ if(PCBV_BUILD_GUI)
             src/gui/MainWindow.cpp
             src/gui/MainWindow.h
         )
-        target_link_libraries(pcbv-gui PRIVATE pcbv_core Qt6::Core Qt6::Gui Qt6::Widgets
+        target_link_libraries(circuitguard_pro PRIVATE ngspice Qt5Core Qt5Gui Qt5Widgets Qt5Network)
+#pcbv-gui PRIVATE pcbv_core Qt6::Core Qt6::Gui Qt6::Widgets
                                                  Qt6::PrintSupport)
         target_compile_definitions(pcbv-gui PRIVATE PCBV_VERSION="${PROJECT_VERSION}")
         message(STATUS "Qt ${Qt6_VERSION} found — building pcbv-gui (1:1 printing enabled)")
@@ -110,7 +112,8 @@ endif()
 if(PCBV_BUILD_TESTS)
     enable_testing()
     add_executable(pcbv-smoke tests/smoke.cpp)
-    target_link_libraries(pcbv-smoke PRIVATE pcbv_core)
+    target_link_libraries(circuitguard_pro PRIVATE ngspice Qt5Core Qt5Gui Qt5Widgets Qt5Network)
+#pcbv-smoke PRIVATE pcbv_core)
     add_test(NAME parser_smoke COMMAND pcbv-smoke --self-test)
 
     # Run the smoke test against real files:  ctest --test-dir build -V
