@@ -79,12 +79,12 @@ public slots:
             netlist.components["R12"].pinToNetMap["2"] = "GND";
             Net vccNet;
             vccNet.name = "VCC_3V3";
-            vccNet.connectedPins.append({"R12", "1"});
+            vccNet.connectedPins.append(PinRef{"R12", "1"});
             vccNet.constraint = ExpectedConstraint{"VCC_3V3", 3.3, 5.0, 0.300, 0.500};
             netlist.nets["VCC_3V3"] = vccNet;
             Net gndNet;
             gndNet.name = "GND";
-            gndNet.connectedPins.append({"R12", "2"});
+            gndNet.connectedPins.append(PinRef{"R12", "2"});
             netlist.nets["GND"] = gndNet;
         }
 

@@ -519,7 +519,10 @@ std::vector<detail::SchRecord>readBinarySchRecords(const std::vector<std::uint8_
         record.binary = (flags == 0x01);
         if (record.binary) {
             record.type = (size >= 4) ? rdI32(header, pos) : -1;
-            if (record.type == 2 && size >= 4) {
+            if (record.type == 27 && size >= 4) {
+                const std::vector<std::uint8_t> payload(header.begin() + pos + 4, header.begin() + pos + size);
+                decodeBinaryPin(payload, record.props);
+            } else if (record.type == 2 && size >= 4) {
                 const std::vector<std::uint8_t>payload(
                     header.begin() + static_cast<std::ptrdiff_t>(pos + 4),
                     header.begin() + static_cast<std::ptrdiff_t>(pos + size));
@@ -713,6 +716,15 @@ void buildSchDocument(const std::vector<SchRecord>& records, Document& document)
                         c.designator = value;
                     else if (name == "COMMENT" && c.comment.empty())
                         c.comment = value;
+                }  else if (child->type == 27) {
+                    // RECORD=27 is schematic wire segment
+                    document.geometry.tracks.push_back({
+                        parseMil(valueOf(child->props, "X1")) * 10.0,
+                        parseMil(valueOf(child->props, "Y1")) * 10.0,
+                        parseMil(valueOf(child->props, "X2")) * 10.0,
+                        parseMil(valueOf(child->props, "Y2")) * 10.0,
+                        1.0
+                    });
                 } else if (child->type == 2) {
                     Pin pin;
                     pin.name = valueOf(child->props, "NAME");

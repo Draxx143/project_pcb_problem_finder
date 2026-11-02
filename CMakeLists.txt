@@ -7,8 +7,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Widgets Network REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets Network REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Gui Widgets Network PrintSupport REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets Network PrintSupport REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(NGSPICE REQUIRED ngspice)

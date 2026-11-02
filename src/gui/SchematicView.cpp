@@ -68,8 +68,8 @@ void SchematicView::rebuildLayout() {
 
     for (int i = 0; i < n; ++i) {
         const auto& c = document_.components[i];
-        double cx = hasValidCoords ? c.x : (160.0 + (i % cols) * cellW);
-        double cy = hasValidCoords ? -c.y : (140.0 + (i / cols) * cellH);
+        double cx = c.x;
+        double cy = -c.y;
 
         PlacedSymbol sym;
         sym.compIndex = i;
@@ -145,8 +145,8 @@ void SchematicView::paintEvent(QPaintEvent*) {
         painter.drawLine(QPointF(frame.left(), y), QPointF(frame.right(), y));
     }
 
-    // 2. Explicit parsed wires (if present in geometry.tracks)
-    painter.setPen(QPen(QColor(0, 210, 110, 210), 1.8));
+    // 2. Explicit parsed schematic wires (RECORD=27)
+    painter.setPen(QPen(QColor(0, 220, 100, 230), 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     for (const auto& t : document_.geometry.tracks) {
         painter.drawLine(QPointF(t.x1, -t.y1), QPointF(t.x2, -t.y2));
     }
